@@ -1,0 +1,2 @@
+scrapy==2.7.1
+html-to-json==2.0.0

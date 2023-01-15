@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 
 
 class Node(dict):
@@ -6,26 +6,26 @@ class Node(dict):
     def id(self) -> int:
         return self.get('id')
 
-    @id.setter
-    def id(self, value):
-        self['id'] = value
-
     @property
     def parent_id(self):
         return self.get('parent_id')
 
-    @parent_id.setter
-    def parent_id(self, value):
-        self['parent_id'] = value
+    @property
+    def graph_id(self) -> int:
+        return self.get('graph_id')
+
+    @property
+    def graph_node_id(self) -> str:
+        return f'{self.graph_id}.{self.id}'
+
+    @property
+    def graph_parent_id(self) -> str:
+        return f'{self.graph_id}.{self.parent_id}'
 
     @property
     def features(self) -> List[Tuple[str, str]]:
         return self.get('features')
 
-    @features.setter
-    def features(self, value):
-        self['features'] = value
-
     @property
-    def features_str(self) -> List[str]:
-        return [f'{k}={v}' for k, v in self.features]
+    def features_dict(self) -> Dict[str, int]:
+        return {f'{k}={v}': 1 for k, v in self.features}

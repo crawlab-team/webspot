@@ -1,7 +1,7 @@
 import json
 import os.path
 
-import html_to_json
+import html_to_json_enhanced
 import scrapy
 from scrapy.crawler import logger
 from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
@@ -48,7 +48,7 @@ class WebSpider(scrapy.Spider):
     def start_requests(self):
         # log settings
         logger.info(f'settings.domain: {self.domain}')
-        logger.info(f'settings.url: {self.urls}')
+        logger.info(f'settings.urls: {self.urls}')
 
         # set allowed domains
         self.allowed_domains = [self.domain]
@@ -82,7 +82,7 @@ class WebSpider(scrapy.Spider):
         # save response json
         filename = os.path.join(self.data_json_dir, f'{filename_prefix}.json')
         with open(filename, 'w') as f:
-            json_data = html_to_json.convert(response.body)
+            json_data = html_to_json_enhanced.convert(response.body, with_id=True)
             f.write(json.dumps(json_data))
 
         # follow links

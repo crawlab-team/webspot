@@ -30,6 +30,7 @@ class GraphLoader(object):
         self.nodes_ids_map: Dict[str, int] = {}
         self.nodes_features: List[Dict[str, int]] = []
         self.edges: List[Edge] = []
+        self.graphs_id_file_map: Dict[int, str] = {}
 
         # encoders
         self.feat_enc = DictVectorizer()
@@ -56,8 +57,9 @@ class GraphLoader(object):
 
     def load_graph_data(self):
         # iterate files
-        for i, filename in enumerate(self.iter_all_json_file_paths()):
-            self._load_graph_data(self.get_nodes_json_data(filename), i)
+        for graph_id, filename in enumerate(self.iter_all_json_file_paths()):
+            self._load_graph_data(self.get_nodes_json_data(filename), graph_id)
+            self.graphs_id_file_map[graph_id] = filename
 
         # encode node ids
         self.nodes_ids = self.node_ids_enc.fit_transform(

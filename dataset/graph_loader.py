@@ -16,11 +16,13 @@ from models.node import Node
 
 
 class GraphLoader(object):
-    def __init__(self, data_path: str = None, file_pattern: str = None, body_only: bool = True):
+    def __init__(self, data_path: str = None, file_pattern: str = None, body_only: bool = True,
+                 embed_walk_length: int = 5):
         # settings
         self.data_path = data_path or os.path.join(os.path.dirname(__file__), '..', 'data')
         self.file_pattern = file_pattern or r'\.json$'
         self.body_only = body_only
+        self.embed_walk_length = embed_walk_length
 
         # data
         self.nodes: List[Node] = []
@@ -159,10 +161,8 @@ class GraphLoader(object):
             self.nodes_ids_tensor,
             p=1,
             q=1,
-            walk_length=10,
+            walk_length=self.embed_walk_length,
         )
-        print(self.nodes_embedded_tensor)
-        print(self.nodes_embedded_tensor.shape)
 
     def run(self):
         self.load_graph_data()

@@ -16,40 +16,41 @@ from models.node import Node
 
 
 class GraphLoader(object):
-    # data
-    nodes: List[Node] = []
-    nodes_ids: List[int] = []
-    nodes_ids_map: Dict[str, int] = {}
-    nodes_features: List[Dict[str, int]] = []
-    edges: List[Edge] = []
-
-    # encoders
-    feat_enc = DictVectorizer()
-    node_ids_enc = LabelEncoder()
-
-    # tensors
-    nodes_ids_tensor: torch.Tensor
-    nodes_features_tensor: torch.Tensor
-    edges_source_tensor: torch.Tensor
-    edges_target_tensor: torch.Tensor
-
-    # graph
-    g_dgl: DGLGraph
-
-    def __init__(self, data_dir_path: str = None, file_pattern: str = None, body_only: bool = True):
+    def __init__(self, data_path: str = None, file_pattern: str = None, body_only: bool = True):
         # settings
-        self.data_dir_path = data_dir_path or os.path.join(os.path.dirname(__file__), '..', 'data')
+        self.data_path = data_path or os.path.join(os.path.dirname(__file__), '..', 'data')
         self.file_pattern = file_pattern or r'\.json$'
         self.body_only = body_only
 
+        # data
+        self.nodes: List[Node] = []
+        self.nodes_ids: List[int] = []
+        self.nodes_ids_map: Dict[str, int] = {}
+        self.nodes_features: List[Dict[str, int]] = []
+        self.edges: List[Edge] = []
+
+        # encoders
+        self.feat_enc = DictVectorizer()
+        self.node_ids_enc = LabelEncoder()
+
+        # tensors
+        self.nodes_ids_tensor = torch.LongTensor()
+        self.nodes_features_tensor = torch.LongTensor()
+        self.edges_source_tensor = torch.LongTensor()
+        self.edges_target_tensor = torch.LongTensor()
+        self.nodes_embedded_tensor = torch.LongTensor()
+
+        # graph
+        self.g_dgl = DGLGraph()
+
     def iter_all_json_file_paths(self) -> Iterator[str]:
-        """
-        iterate all files with pattern in data_dir_path
-        """
-        for root, dirs, files in os.walk(self.data_dir_path):
-            for file in files:
-                if re.search(self.file_pattern, file) is not None:
-                    yield os.path.join(root, file)
+        if os.path.isdir(self.data_path):
+            for root, dirs, files in os.walk(self.data_path):
+                for file in files:
+                    if re.search(self.file_pattern, file) is not None:
+                        yield os.path.join(root, file)
+        else:
+            yield self.data_path
 
     def load_graph_data(self):
         # iterate files
@@ -58,7 +59,7 @@ class GraphLoader(object):
 
         # encode node ids
         self.nodes_ids = self.node_ids_enc.fit_transform(
-            np.array([node.graph_node_id for node in self.nodes]).reshape(-1, 1).astype(str)
+            np.array([node.graph_node_id for node in self.nodes]).reshape(-1, 1)
         )
 
         # node ids map
@@ -74,7 +75,9 @@ class GraphLoader(object):
                     or json_data.get('html')[0].get('body') is None \
                     or len(json_data.get('html')[0].get('body')) == 0:
                 raise Exception('html.body is empty')
-            return list(iterate(json_data['html'][0].get('body')[0]))
+            body = json_data['html'][0].get('body')[0]
+            elements = list(iterate(body))
+            return elements
         else:
             return list(iterate(json_data))
 
@@ -134,9 +137,9 @@ class GraphLoader(object):
 
     def load_tensors(self):
         # nodes tensors
-        self.nodes_ids_tensor = torch.LongTensor(self.node_ids_enc.fit_transform(self.nodes_ids))
+        self.nodes_ids_tensor = torch.LongTensor(self.nodes_ids)
         features = self.feat_enc.fit_transform(self.nodes_features).todense()
-        self.nodes_features_tensor = torch.IntTensor(features)
+        self.nodes_features_tensor = torch.tensor(data=features, dtype=torch.float32, requires_grad=True)
 
         # edges tensors
         self.edges_source_tensor = self.nodes_ids_tensor
@@ -149,13 +152,35 @@ class GraphLoader(object):
 
         print(self.g_dgl.local_var())
 
+    def load_embeddings(self):
+        # embedded nodes tensor
+        self.nodes_embedded_tensor = dgl.sampling.node2vec_random_walk(
+            self.g_dgl,
+            self.nodes_ids_tensor,
+            p=1,
+            q=1,
+            walk_length=10,
+        )
+        print(self.nodes_embedded_tensor)
+        print(self.nodes_embedded_tensor.shape)
+
     def run(self):
         self.load_graph_data()
         self.load_tensors()
         self.load_dgl_graph()
+        self.load_embeddings()
+
+    @property
+    def graph_ids(self) -> List[str]:
+        return list(set(map(lambda n: n.graph_id, self.nodes)))
+
+    def get_node_ids_by_graph_id(self, graph_id) -> List[int]:
+        node_ids = np.array([n.graph_node_id for n in self.nodes if n.graph_id == graph_id]).reshape(-1, 1)
+        return self.node_ids_enc.transform(node_ids)
 
 
 if __name__ == '__main__':
-    data_dir_path = '/Users/marvzhang/projects/crawlab-team/auto-html/data/quotes.toscrape.com'
-    loader = GraphLoader(data_dir_path=data_dir_path)
+    # data_dir_path = '/Users/marvzhang/projects/crawlab-team/auto-html/data/quotes.toscrape.com'
+    data_dir_path = '/Users/marvzhang/projects/crawlab-team/auto-html/data/quotes.toscrape.com/json/http___quotes_toscrape_com_.json'
+    loader = GraphLoader(data_dir_path)
     loader.run()

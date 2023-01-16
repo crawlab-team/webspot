@@ -133,3 +133,4 @@ data/
 .DS_Store
 .idea
 _trial_temp
+.models

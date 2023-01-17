@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from typing import List, Iterator, Tuple, Set, Dict
+from typing import List, Iterator, Tuple, Set, Dict, Union
 
 import dgl
 import numpy as np
@@ -179,6 +179,14 @@ class GraphLoader(object):
     def get_node_ids_by_graph_id(self, graph_id) -> List[int]:
         node_ids = np.array([n.graph_node_id for n in self.nodes if n.graph_id == graph_id]).reshape(-1, 1)
         return self.node_ids_enc.transform(node_ids)
+
+    def get_node_by_id(self, id: int) -> Union[Node, None]:
+        for node in self.nodes:
+            if node.id == id:
+                return node
+
+    def get_nodes_by_ids(self, ids: List[int]) -> List[Node]:
+        return [n for n in self.nodes if n.id in ids]
 
 
 if __name__ == '__main__':

@@ -33,7 +33,7 @@ class GraphLoader(object):
         self.graphs_id_file_map: Dict[int, str] = {}
 
         # encoders
-        self.feat_enc = DictVectorizer()
+        self.nodes_features_enc = DictVectorizer()
         self.node_ids_enc = LabelEncoder()
 
         # tensors
@@ -142,7 +142,7 @@ class GraphLoader(object):
     def load_tensors(self):
         # nodes tensors
         self.nodes_ids_tensor = torch.LongTensor(self.nodes_ids)
-        features = self.feat_enc.fit_transform(self.nodes_features).todense()
+        features = self.nodes_features_enc.fit_transform(self.nodes_features).todense()
         self.nodes_features_tensor = torch.tensor(data=features, dtype=torch.float32, requires_grad=True)
 
         # edges tensors

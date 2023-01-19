@@ -1,5 +1,6 @@
 from typing import List
 
+from detect.models.stats import Stats
 from models.node import Node
 
 
@@ -9,9 +10,9 @@ class ListResult(dict):
         return self.get('nodes')
 
     @property
-    def container(self) -> Node:
-        return self.get('container')
+    def root(self) -> Node:
+        return self.get('root')
 
     @property
-    def entropy(self) -> float:
-        return self.get('entropy')
+    def stats(self) -> Stats:
+        return Stats(self.get('stats') or {})

@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from dataset.graph_dataset import GraphDataset
-from nn.dgl.gae.gae import GAE
+from nn.dgl_nn.gae.gae import GAE
 
 
 def collate(samples):

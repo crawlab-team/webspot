@@ -29,5 +29,5 @@ class GraphDataset(Dataset):
 
 
 if __name__ == '__main__':
-    data_path = '/Users/marvzhang/projects/crawlab-team/auto-html/data/quotes.toscrape.com'
+    data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/quotes.toscrape.com'
     GraphDataset(data_path)

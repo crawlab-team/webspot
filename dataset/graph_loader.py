@@ -23,6 +23,11 @@ class GraphLoader(object):
         self.file_pattern = file_pattern or r'\.json$'
         self.body_only = body_only
         self.embed_walk_length = embed_walk_length
+        self.available_feature_keys = [
+            'tag',
+            'id',
+            'class',
+        ]
 
         # data
         self.nodes: List[Node] = []
@@ -73,17 +78,18 @@ class GraphLoader(object):
         with open(filename) as f:
             json_data = json.loads(f.read())
 
+        # by default html as root
+        root = json_data
+
+        # if body only
         if self.body_only:
-            if json_data.get('html') is None \
-                    or len(json_data.get('html')) == 0 \
-                    or json_data.get('html')[0].get('body') is None \
-                    or len(json_data.get('html')[0].get('body')) == 0:
-                raise Exception('html.body is empty')
-            body = json_data['html'][0].get('body')[0]
-            elements = list(iterate(body))
-            return elements
-        else:
-            return list(iterate(json_data))
+            arr = [c for c in root.get('_children') if c.get('_tag') == 'body']
+            if len(arr) > 0:
+                root = arr[0]
+            else:
+                raise Exception('No body tag found')
+
+        return list(iterate(root))
 
     def _load_graph_data(self, nodes_json_data: List[dict], graph_id: int):
         for i, node_json_data in enumerate(nodes_json_data):
@@ -188,9 +194,35 @@ class GraphLoader(object):
     def get_nodes_by_ids(self, ids: List[int]) -> List[Node]:
         return [n for n in self.nodes if n.id in ids]
 
+    @property
+    def _unique_features_idx(self):
+        # features counts vector
+        features_counts = self.nodes_features_tensor.detach().numpy().sum(axis=0)
+
+        # indexes of features each of which is associated to only one node
+        unique_features_idx = np.where(features_counts == 1)
+
+        return unique_features_idx
+
+    @property
+    def _available_features_idx(self):
+        available_features = [f for f in self.nodes_features_enc.feature_names_
+                              if f.split('=')[0] in self.available_feature_keys]
+        available_features_mask = np.isin(loader.nodes_features_enc.feature_names_, np.array(available_features))
+        available_features_idx = np.argwhere(available_features_mask).T
+
+        return available_features_idx
+
+    @property
+    def unique_node_features(self):
+        unique_available_features_idx = np.intersect1d(self._unique_features_idx, self._available_features_idx)
+        unique_available_features = np.array(loader.nodes_features_enc.feature_names_)[unique_available_features_idx]
+
+        return unique_available_features
+
 
 if __name__ == '__main__':
-    # data_dir_path = '/Users/marvzhang/projects/crawlab-team/auto-html/data/quotes.toscrape.com'
-    data_dir_path = '/Users/marvzhang/projects/crawlab-team/auto-html/data/quotes.toscrape.com/json/http___quotes_toscrape_com_.json'
-    loader = GraphLoader(data_dir_path)
+    # data_dir_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/quotes.toscrape.com'
+    data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/quotes.toscrape.com/json/http___quotes_toscrape_com_.json'
+    loader = GraphLoader(data_path)
     loader.run()

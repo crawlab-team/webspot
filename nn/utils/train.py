@@ -84,11 +84,11 @@ def main(data_dir: str, batch_size: int, n_epochs: int, save_dir: str, lr: float
 
 
 if __name__ == '__main__':
-    data_dir = '/Users/marvzhang/projects/crawlab-team/auto-html/data/quotes.toscrape.com'
+    data_dir = '/Users/marvzhang/projects/tikazyq/auto-html/data/quotes.toscrape.com'
     main(
         data_dir=data_dir,
         batch_size=10,
         n_epochs=50,
-        save_dir='/Users/marvzhang/projects/crawlab-team/auto-html/.models',
+        save_dir='/Users/marvzhang/projects/tikazyq/auto-html/.models',
         lr=1e-4,
     )

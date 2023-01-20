@@ -5,7 +5,6 @@ from typing import List
 
 import numpy as np
 import pandas as pd
-import torch
 from scipy.stats import entropy
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import normalize
@@ -148,10 +147,10 @@ class SimpleListDetector(object):
 
 
 if __name__ == '__main__':
-    # data_path = '/Users/marvzhang/projects/crawlab-team/auto-html/data/quotes.toscrape.com/json/http___quotes_toscrape_com_.json'
-    # data_path = '/Users/marvzhang/projects/crawlab-team/auto-html/data/docs.scrapy.org/json/https___docs_scrapy_org_en_latest_.json'
-    # data_path = '/Users/marvzhang/projects/crawlab-team/auto-html/data/news.ycombinator.com/json/https___news_ycombinator_com.json'
-    # data_path = '/Users/marvzhang/projects/crawlab-team/auto-html/data/ssr1.scrape.center/json/https___ssr1_scrape_center.json'
-    data_path = '/Users/marvzhang/projects/crawlab-team/auto-html/data/github.com/json/https___github_com_trending.json'
+    data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/quotes.toscrape.com/json/http___quotes_toscrape_com_.json'
+    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/docs.scrapy.org/json/https___docs_scrapy_org_en_latest_.json'
+    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/news.ycombinator.com/json/https___news_ycombinator_com.json'
+    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/ssr1.scrape.center/json/https___ssr1_scrape_center.json'
+    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/github.com/json/https___github_com_trending.json'
     detector = SimpleListDetector(data_path, dbscan_eps=0.5, dbscan_min_samples=4)
     detector.run()

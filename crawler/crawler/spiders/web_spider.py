@@ -23,6 +23,10 @@ class WebSpider(scrapy.Spider):
         return self.settings.get('urls') or []
 
     @property
+    def url_paths(self) -> list:
+        return self.settings.get('urls_paths') or []
+
+    @property
     def data_root_dir(self) -> str:
         return self.settings.get('data_root_dir') or os.path.join(os.path.dirname(__file__), '..', '..', '..', 'data')
 
@@ -49,12 +53,16 @@ class WebSpider(scrapy.Spider):
         # log settings
         logger.info(f'settings.domain: {self.domain}')
         logger.info(f'settings.urls: {self.urls}')
+        logger.info(f'settings.url_paths: {self.url_paths}')
 
         # set allowed domains
         self.allowed_domains = [self.domain]
 
         # link extractor
-        self.link_extractor = LxmlLinkExtractor(allow_domains=self.allowed_domains)
+        self.link_extractor = LxmlLinkExtractor(
+            allow=self.url_paths,
+            allow_domains=self.allowed_domains,
+        )
 
         for url in self.urls:
             if self.is_test and 'example' in url:

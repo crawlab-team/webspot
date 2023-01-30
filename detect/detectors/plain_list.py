@@ -13,13 +13,13 @@ from dataset.graph_loader import GraphLoader
 from detect.models.list_result import ListResult
 
 
-class SimpleListDetector(object):
-    def __init__(self, data_path: str, save_path: str = None, dbscan_eps: float = 0.5, dbscan_min_samples: int = 5,
+class PlainListDetector(object):
+    def __init__(self, data_path: str, save_path: str = None, dbscan_eps: float = 0.5, dbscan_min_samples: int = 3,
                  entropy_threshold: float = 1e-3, embed_walk_length: int = 5):
         # settings
         self.entropy_threshold = entropy_threshold
         self.save_path = save_path or os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'detect', 'simple_list',
+            os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'detect', 'plain_list',
                          data_path.split('/')[-1]))
 
         # graph loader
@@ -76,8 +76,8 @@ class SimpleListDetector(object):
 
     def _filter(self):
         df_nodes = pd.DataFrame({
-            'id': [n.id for n in self.graph_loader.nodes],
-            'parent_id': [n.parent_id for n in self.graph_loader.nodes],
+            'id': [n.id for n in self.graph_loader.nodes_],
+            'parent_id': [n.parent_id for n in self.graph_loader.nodes_],
             'label': self.dbscan.labels_,
         })
         df_nodes = df_nodes[df_nodes.label != -1]
@@ -147,10 +147,18 @@ class SimpleListDetector(object):
 
 
 if __name__ == '__main__':
-    data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/quotes.toscrape.com/json/http___quotes_toscrape_com_.json'
-    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/docs.scrapy.org/json/https___docs_scrapy_org_en_latest_.json'
+    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/quotes.toscrape.com/json/http___quotes_toscrape_com_.json'
+    data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/github.com/json/https___github_com_trending.json'
     # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/news.ycombinator.com/json/https___news_ycombinator_com.json'
-    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/ssr1.scrape.center/json/https___ssr1_scrape_center.json'
-    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/github.com/json/https___github_com_trending.json'
-    detector = SimpleListDetector(data_path, dbscan_eps=0.5, dbscan_min_samples=4)
+    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/www.ruanyifeng.com/json/http___www_ruanyifeng_com_blog_.json'
+    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/www.producthunt.com/json/https___www_producthunt_com.json'
+    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/edition.cnn.com/json/https___edition_cnn_com.json'
+    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/shixian.com/json/https___shixian_com_jobs_part-time.json'
+    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/github.com/json/https___github_com_search?q=crawlab.json'
+    detector = PlainListDetector(data_path)
     detector.run()
+
+    for i in range(len(detector.results)):
+        result_node_id = detector.results[i].root.id
+        result_node = detector.graph_loader.get_node_by_id(result_node_id)
+        print(detector.graph_loader.get_node_css_selector_path(result_node))

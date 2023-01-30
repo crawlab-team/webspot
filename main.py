@@ -12,8 +12,9 @@ subparsers = parser.add_subparsers(
 
 crawl_parser = subparsers.add_parser('crawl')
 crawl_parser.add_argument('--domain', '-D', help='domain to crawl', required=True)
-crawl_parser.add_argument('--urls', help='urls to crawl, comma separated')
-crawl_parser.add_argument('--data-root-dir', help='root directory to store data')
+crawl_parser.add_argument('--urls', '-U', help='urls to crawl, comma separated')
+crawl_parser.add_argument('--url_paths', '-P', help='root directory to store data')
+crawl_parser.add_argument('--data-root-dir', '-d', help='root directory to store data')
 crawl_parser.set_defaults(func=cmd_crawl)
 
 if __name__ == '__main__':

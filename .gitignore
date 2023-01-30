@@ -134,3 +134,4 @@ data/
 .idea
 _trial_temp
 .models
+tmp/

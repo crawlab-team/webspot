@@ -92,23 +92,48 @@ class PlainListDetector(object):
         df_labels_filtered = df_labels[threshold_mask]
 
         for label in df_labels_filtered.index:
-            nodes_ids = df_nodes[df_nodes.label == label].id.values
-            nodes = self.graph_loader.get_nodes_by_ids(nodes_ids)
-            root = self.graph_loader.get_node_by_id(nodes[0].parent_id)
+            # item node ids
+            item_nodes_ids = df_nodes[df_nodes.label == label].id.values
+
+            # item nodes
+            item_nodes = self.graph_loader.get_nodes_by_ids(item_nodes_ids)
+
+            # list node
+            list_node = self.graph_loader.get_node_by_id(item_nodes[0].parent_id)
+
+            # entropy
             entropy_ = df_labels.loc[label].entropy
+
+            # list node extract rule (css)
+            list_node_extract_rule_css = self.graph_loader.get_node_css_selector_path(list_node)
+
+            # items node extract rule (css)
+            items_node_extract_rule_css = self.graph_loader.get_node_css_selector_repr(item_nodes[0], False)
+
+            # items node full extract rule (css)
+            items_node_extract_rule_css_full = f'{list_node_extract_rule_css} > {items_node_extract_rule_css}'
+
+            # add to result
             self.results.append(
                 ListResult({
-                    'root': root,
-                    'nodes': nodes,
+                    'nodes': {
+                        'list': list_node,
+                        'items': item_nodes,
+                    },
                     'stats': {
                         'entropy': entropy_,
+                    },
+                    'extract_rules_css': {
+                        'list': list_node_extract_rule_css,
+                        'items': items_node_extract_rule_css,
+                        'items_full': items_node_extract_rule_css_full,
                     },
                 }),
             )
 
     def _sort(self):
         for i, result in enumerate(self.results):
-            nodes_ids = np.array([n.id for n in result.nodes])
+            nodes_ids = np.array([n.id for n in result.item_nodes])
             nodes_idx = np.argwhere(np.isin(self.graph_loader.nodes_ids, nodes_ids))
 
             try:
@@ -147,8 +172,8 @@ class PlainListDetector(object):
 
 
 if __name__ == '__main__':
-    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/quotes.toscrape.com/json/http___quotes_toscrape_com_.json'
-    data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/github.com/json/https___github_com_trending.json'
+    data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/quotes.toscrape.com/json/http___quotes_toscrape_com_.json'
+    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/github.com/json/https___github_com_trending.json'
     # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/news.ycombinator.com/json/https___news_ycombinator_com.json'
     # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/www.ruanyifeng.com/json/http___www_ruanyifeng_com_blog_.json'
     # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/www.producthunt.com/json/https___www_producthunt_com.json'
@@ -158,7 +183,5 @@ if __name__ == '__main__':
     detector = PlainListDetector(data_path)
     detector.run()
 
-    for i in range(len(detector.results)):
-        result_node_id = detector.results[i].root.id
-        result_node = detector.graph_loader.get_node_by_id(result_node_id)
-        print(detector.graph_loader.get_node_css_selector_path(result_node))
+    for result in detector.results:
+        print(result.extract_rules)

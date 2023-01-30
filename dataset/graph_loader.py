@@ -200,6 +200,12 @@ class GraphLoader(object):
     def get_nodes_by_ids(self, ids: List[int]) -> List[Node]:
         return [n for n in self.nodes_ if n.id in ids]
 
+    def get_nodes_by_parent_id(self, parent_id: int) -> List[Node]:
+        return [n for n in self.nodes_ if n.parent_id == parent_id]
+
+    def get_node_children(self, n: Node) -> List[Node]:
+        return self.get_nodes_by_parent_id(n.id)
+
     @property
     def unique_features_idx(self):
         # features counts vector
@@ -261,7 +267,7 @@ class GraphLoader(object):
                 and n.feature_tag == node.feature_tag
                 and node_feature_classes_set.issubset(set(n.feature_classes))]
 
-    def _get_node_css_selector_repr(self, node: Node) -> str:
+    def get_node_css_selector_repr(self, node: Node, numbered: bool = True) -> str:
         # id
         if node.feature_id is not None:
             return f'{node.feature_tag}#{node.feature_id}'
@@ -270,7 +276,7 @@ class GraphLoader(object):
         elif len(node.feature_classes) > 0:
             previous_siblings = self._get_node_previous_siblings_with_classes(node)
             length = len(previous_siblings) + 1
-            if length > 1:
+            if numbered and length > 1:
                 return f'{node.feature_tag}.{".".join(node.feature_classes)}:nth-child({length})'
             else:
                 return f'{node.feature_tag}.{".".join(node.feature_classes)}'
@@ -278,7 +284,7 @@ class GraphLoader(object):
         # tag
         else:
             length = len(self._get_node_previous_siblings(node)) + 1
-            if length > 1:
+            if numbered and length > 1:
                 return f'{node.feature_tag}:nth-child({length})'
             else:
                 return f'{node.feature_tag}'
@@ -296,10 +302,10 @@ class GraphLoader(object):
     def get_node_css_selector_path(self, node: Node) -> str:
         # return if no parent
         if node.parent_id is None:
-            return self._get_node_css_selector_repr(node)
+            return self.get_node_css_selector_repr(node)
 
         # css selector path
-        path = [self._get_node_css_selector_repr(node)]
+        path = [self.get_node_css_selector_repr(node)]
 
         # iterate node parent until reaching end condition
         while node.parent_id is not None:
@@ -310,14 +316,14 @@ class GraphLoader(object):
             if parent is None:
                 break
 
-            # end if node is unique-feature
-            if self.unique_node_feature_id_dict.get(node.id) is not None:
-                feat = self.unique_node_feature_id_dict.get(node.id)
+            # end if parent node is unique-feature
+            if self.unique_node_feature_id_dict.get(parent.id) is not None:
+                feat = self.unique_node_feature_id_dict.get(parent.id)
                 path.insert(0, self._get_node_css_selector_repr_from_feature(feat))
                 break
 
             # add to path
-            parent_path = self._get_node_css_selector_repr(parent)
+            parent_path = self.get_node_css_selector_repr(parent)
             path.insert(0, parent_path)
 
             # set node to its parent

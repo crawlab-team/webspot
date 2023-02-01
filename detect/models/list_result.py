@@ -22,4 +22,5 @@ class ListResult(dict):
         return {
             'list': self.get('extract_rules_css').get('list'),
             'items': self.get('extract_rules_css').get('items'),
+            'fields': self.get('extract_rules_css').get('fields'),
         }

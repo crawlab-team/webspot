@@ -1,29 +1,62 @@
 import json
 import logging
 import os.path
-from typing import List
+import time
+from typing import List, Set
 
+import html_to_json_enhanced
 import numpy as np
 import pandas as pd
+import requests
 from scipy.stats import entropy
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import normalize
 
 from dataset.graph_loader import GraphLoader
+from detect.models.field import Field
 from detect.models.list_result import ListResult
 
 
 class PlainListDetector(object):
-    def __init__(self, data_path: str, save_path: str = None, dbscan_eps: float = 0.5, dbscan_min_samples: int = 3,
-                 entropy_threshold: float = 1e-3, embed_walk_length: int = 5):
+    def __init__(
+            self,
+            url: str = None,
+            json_data: str = None,
+            json_path: str = None,
+            save_path: str = None,
+            dbscan_eps: float = 0.5,
+            dbscan_min_samples: int = 3,
+            entropy_threshold: float = 1e-3,
+            embed_walk_length: int = 5,
+            item_nodes_samples=5,
+    ):
         # settings
+        self.url = url
+        self.json_data = json_data
+        self.json_path = json_path
         self.entropy_threshold = entropy_threshold
-        self.save_path = save_path or os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'detect', 'plain_list',
-                         data_path.split('/')[-1]))
+        self.item_nodes_samples = item_nodes_samples
+        assert self.url or self.json_data or self.json_path, 'url or json_data or json_path is required'
+
+        # save path
+        self.save_path = save_path
+        if not self.save_path:
+            if self.url:
+                self.save_path = os.path.abspath(
+                    os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'detect', 'plain_list',
+                                 self.url.replace('/', '_').replace(':', '_').replace('.', '_') + '.json'))
+            elif self.json_path:
+                self.save_path = os.path.abspath(
+                    os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'detect', 'plain_list',
+                                 self.json_path.split('/')[-1]))
+
+        # request html page if url exists
+        if self.url:
+            self._request()
 
         # graph loader
-        self.graph_loader = GraphLoader(data_path, embed_walk_length=embed_walk_length)
+        self.graph_loader = GraphLoader(json_data=self.json_data, json_path=self.json_path,
+                                        embed_walk_length=embed_walk_length)
         self.graph_loader.run()
 
         # dbscan clustering model
@@ -31,6 +64,10 @@ class PlainListDetector(object):
 
         # data
         self.results: List[ListResult] = []
+
+    def _request(self):
+        res = requests.get(self.url)
+        self.json_data = html_to_json_enhanced.convert(res.content.decode('utf-8'), with_id=True)
 
     def _get_nodes_features_tags_attrs(self, nodes_idx: np.ndarray = None):
         """
@@ -71,6 +108,27 @@ class PlainListDetector(object):
             axis=1,
         )
 
+    def _extract_fields_by_id(self, list_id: int) -> List[Field]:
+        fields: List[Field] = []
+        fields_extract_rules_set: Set[str] = set()
+        list_child_nodes = self.graph_loader.get_node_children_by_id(list_id)
+        for i, c in enumerate(list_child_nodes):
+            if i == self.item_nodes_samples:
+                break
+            item_child_nodes = self.graph_loader.get_node_children_recursive_by_id(c.id)
+            for n in item_child_nodes:
+                if n.text is not None and n.text.strip() != '':
+                    extract_rule_css = self.graph_loader.get_node_css_selector_path(node=n, root_id=list_id,
+                                                                                    numbered=False)
+                    fields_extract_rules_set.add(extract_rule_css)
+
+        for extract_rule_css in fields_extract_rules_set:
+            fields.append(Field({
+                'name': hash(extract_rule_css),
+                'extract_rule_css': extract_rule_css,
+            }))
+        return fields
+
     def _train(self):
         self.dbscan.fit(self._get_nodes_features())
 
@@ -104,15 +162,6 @@ class PlainListDetector(object):
             # entropy
             entropy_ = df_labels.loc[label].entropy
 
-            # list node extract rule (css)
-            list_node_extract_rule_css = self.graph_loader.get_node_css_selector_path(list_node)
-
-            # items node extract rule (css)
-            items_node_extract_rule_css = self.graph_loader.get_node_css_selector_repr(item_nodes[0], False)
-
-            # items node full extract rule (css)
-            items_node_extract_rule_css_full = f'{list_node_extract_rule_css} > {items_node_extract_rule_css}'
-
             # add to result
             self.results.append(
                 ListResult({
@@ -122,11 +171,6 @@ class PlainListDetector(object):
                     },
                     'stats': {
                         'entropy': entropy_,
-                    },
-                    'extract_rules_css': {
-                        'list': list_node_extract_rule_css,
-                        'items': items_node_extract_rule_css,
-                        'items_full': items_node_extract_rule_css_full,
                     },
                 }),
             )
@@ -148,6 +192,33 @@ class PlainListDetector(object):
 
         self.results = sorted(self.results, key=lambda x: x.stats.score, reverse=True)
 
+    def _extract(self):
+        for i, result in enumerate(self.results):
+            # list node
+            list_node = result.list_node
+
+            # item nodes
+            item_nodes = result.item_nodes
+
+            # list node extract rule (css)
+            list_node_extract_rule_css = self.graph_loader.get_node_css_selector_path(list_node)
+
+            # items node extract rule (css)
+            items_node_extract_rule_css = self.graph_loader.get_node_css_selector_repr(item_nodes[0], False)
+
+            # items node full extract rule (css)
+            items_node_extract_rule_css_full = f'{list_node_extract_rule_css} > {items_node_extract_rule_css}'
+
+            # fields node extract rule
+            fields_node_extract_rule_css = self._extract_fields_by_id(list_node.id)
+
+            self.results[i]['extract_rules_css'] = {
+                'list': list_node_extract_rule_css,
+                'items': items_node_extract_rule_css,
+                'items_full': items_node_extract_rule_css_full,
+                'fields': fields_node_extract_rule_css,
+            }
+
     def _save(self):
         if not os.path.exists(os.path.dirname(self.save_path)):
             os.makedirs(os.path.dirname(self.save_path))
@@ -156,6 +227,8 @@ class PlainListDetector(object):
             f.write(json.dumps(self.results, indent=2))
 
     def run(self):
+        tic = time.time()
+
         # train clustering model
         self._train()
 
@@ -165,8 +238,14 @@ class PlainListDetector(object):
         # sort results
         self._sort()
 
+        # extract fields into results
+        self._extract()
+
         # save results
         self._save()
+
+        toc = time.time()
+        logging.info(f'PlainListExtractor: {toc - tic:.2f}s')
 
         return self.results
 
@@ -180,8 +259,15 @@ if __name__ == '__main__':
     # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/edition.cnn.com/json/https___edition_cnn_com.json'
     # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/shixian.com/json/https___shixian_com_jobs_part-time.json'
     # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/github.com/json/https___github_com_search?q=crawlab.json'
-    detector = PlainListDetector(data_path)
+    # detector = PlainListDetector(json_path=data_path)
+
+    # url = 'https://quotes.toscrape.com/'
+    # url = 'https://cuiqingcai.com/'
+    url = 'https://cuiqingcai.com/archives/'
+    detector = PlainListDetector(url=url)
+
     detector.run()
 
     for result in detector.results:
         print(result.extract_rules)
+        # n = detector.graph_loader.get_node_by_id(result.list_node.id)

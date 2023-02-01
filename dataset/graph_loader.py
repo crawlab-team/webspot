@@ -1,10 +1,10 @@
 import json
 import os
 import re
-from collections import defaultdict
-from typing import List, Iterator, Tuple, Set, Dict, Union
+from typing import List, Iterator, Tuple, Dict, Union
 
 import dgl
+import networkx as nx
 import numpy as np
 import torch
 from html_to_json_enhanced import iterate
@@ -12,15 +12,15 @@ from sklearn.feature_extraction import DictVectorizer
 from sklearn.preprocessing import LabelEncoder
 from dgl import DGLGraph
 
-from models.edge import Edge
 from models.node import Node
 
 
 class GraphLoader(object):
-    def __init__(self, data_path: str = None, file_pattern: str = None, body_only: bool = True,
+    def __init__(self, json_data: str = None, json_path: str = None, file_pattern: str = None, body_only: bool = True,
                  embed_walk_length: int = 5):
         # settings
-        self.data_path = data_path or os.path.join(os.path.dirname(__file__), '..', 'data')
+        self.json_data = json_data
+        self.json_path = json_path
         self.file_pattern = file_pattern or r'\.json$'
         self.body_only = body_only
         self.embed_walk_length = embed_walk_length
@@ -29,14 +29,19 @@ class GraphLoader(object):
             'id',
             'class',
         ]
+        assert self.json_data or self.json_path, 'json_data or json_path must be provided'
 
         # data
+        self.root_node_json: dict = {}
         self.nodes_: List[Node] = []
         self.nodes_ids: List[int] = []
-        self.nodes_ids_map: Dict[str, int] = {}
         self.nodes_features: List[Dict[str, int]] = []
-        self.edges: List[Edge] = []
-        self.graphs_id_file_map: Dict[int, str] = {}
+        self.edge_nodes: List[Node] = []
+
+        # internals
+        self._nodes_dict = {}
+        self._css_selector_repr_cache = {}
+        self._unique_node_feature_id_dict: Union[dict, None] = None
 
         # encoders
         self.nodes_features_enc = DictVectorizer()
@@ -52,33 +57,41 @@ class GraphLoader(object):
         # graph
         self.g_dgl = DGLGraph()
 
-    def iter_all_json_file_paths(self) -> Iterator[str]:
-        if os.path.isdir(self.data_path):
-            for root, dirs, files in os.walk(self.data_path):
-                for file in files:
-                    if re.search(self.file_pattern, file) is not None:
-                        yield os.path.join(root, file)
-        else:
-            yield self.data_path
+    @property
+    def nodes_dict(self):
+        if self._nodes_dict:
+            return self._nodes_dict
+        self._nodes_dict = {n.id: n for n in self.nodes_}
+        return self._nodes_dict
+
+    @property
+    def g_nx(self) -> nx.Graph:
+        g_nx = self.g_dgl.to_networkx()
+        min_node_id = min([n.id for n in self.nodes_])
+        g_nx.remove_nodes_from(range(min_node_id))
+        return g_nx
 
     def load_graph_data(self):
-        # iterate files
-        for graph_id, filename in enumerate(self.iter_all_json_file_paths()):
-            self._load_graph_data(self.get_nodes_json_data(filename), graph_id)
-            self.graphs_id_file_map[graph_id] = filename
+        # get list data and root node
+        if self.json_data is not None:
+            list_data, self.root_node_json = self.get_nodes_json_data(self.json_data)
+        else:
+            list_data, self.root_node_json = self.get_nodes_json_data_by_filename(self.json_path)
+
+        # load graph data
+        self._load_graph_data(list_data)
 
         # encode node ids
         self.nodes_ids = self.node_ids_enc.fit_transform(
-            np.array([node.graph_node_id for node in self.nodes_]).reshape(-1, 1)
+            np.array([node.id for node in self.nodes_]).reshape(-1, 1)
         )
 
-        # node ids map
-        self.nodes_ids_map = {node.graph_node_id: node_id for node, node_id in zip(self.nodes_, self.nodes_ids)}
-
-    def get_nodes_json_data(self, filename: str) -> List[dict]:
+    def get_nodes_json_data_by_filename(self, filename: str) -> (List[dict], dict):
         with open(filename) as f:
             json_data = json.loads(f.read())
+        return self.get_nodes_json_data(json_data)
 
+    def get_nodes_json_data(self, json_data: str) -> (List[dict], dict):
         # by default html as root
         root = json_data
 
@@ -90,26 +103,20 @@ class GraphLoader(object):
             else:
                 raise Exception('No body tag found')
 
-        return list(iterate(root))
+        return list(iterate(root)), root
 
-    def _load_graph_data(self, nodes_json_data: List[dict], graph_id: int):
+    def _load_graph_data(self, nodes_json_data: List[dict]):
         for i, node_json_data in enumerate(nodes_json_data):
             # node
-            node = self._get_node(node_json_data, graph_id)
+            node = self._get_node(node_json_data)
 
             # add to all nodes
             self.nodes_.append(node)
 
-            # edge
-            edge = self._get_edge(node)
-
-            # add to all edges
-            self.edges.append(edge)
-
             # add to all node features
             self.nodes_features.append(node.features_dict)
 
-    def _get_node(self, node_json_data: dict, graph_id: int) -> Node:
+    def _get_node(self, node_json_data: dict) -> Node:
         node_id = node_json_data.get('_id')
         parent_id = node_json_data.get('_parent')
 
@@ -117,18 +124,11 @@ class GraphLoader(object):
         node = Node({
             'id': node_id,
             'parent_id': parent_id,
-            'graph_id': graph_id,
             'features': self._get_node_features(node_json_data),
+            'text': self._get_node_text(node_json_data),
         })
 
         return node
-
-    @staticmethod
-    def _get_edge(node: Node) -> Edge:
-        return Edge({
-            'source': node.graph_parent_id,
-            'target': node.graph_node_id,
-        })
 
     @staticmethod
     def _get_node_features(node_json_data: dict) -> List[Tuple[str, str]]:
@@ -147,22 +147,34 @@ class GraphLoader(object):
 
         return features
 
+    @staticmethod
+    def _get_node_text(node_json_data: dict) -> Union[str, None]:
+        if node_json_data.get('_text') is not None:
+            return node_json_data.get('_text')
+
+        elif node_json_data.get('_texts') is not None:
+            return ' '.join(node_json_data.get('_texts'))
+
+        else:
+            return
+
     def load_tensors(self):
-        # nodes tensors
-        self.nodes_ids_tensor = torch.LongTensor(self.nodes_ids)
+        # nodes tensor
+        self.nodes_ids_tensor = torch.LongTensor([n.id for n in self.nodes_])
+
+        # nodes features tensor
         features = self.nodes_features_enc.fit_transform(self.nodes_features).todense()
         self.nodes_features_tensor = torch.tensor(data=features, dtype=torch.float32, requires_grad=True)
 
+        # edge nodes
+        self.edge_nodes = [n for n in self.nodes_ if self.nodes_dict.get(n.parent_id) is not None]
+
         # edges tensors
-        self.edges_source_tensor = self.nodes_ids_tensor
-        node_parent_ids = np.array([self.nodes_ids_map.get(n.graph_parent_id) or 0 for n in self.nodes_]).astype(int)
-        self.edges_target_tensor = torch.LongTensor(node_parent_ids)
+        self.edges_source_tensor = torch.LongTensor([n.parent_id for n in self.edge_nodes])
+        self.edges_target_tensor = torch.LongTensor([n.id for n in self.edge_nodes])
 
     def load_dgl_graph(self):
         self.g_dgl = dgl.graph((self.edges_source_tensor, self.edges_target_tensor))
-        self.g_dgl.ndata['feat'] = self.nodes_features_tensor
-
-        print(self.g_dgl.local_var())
 
     def load_embeddings(self):
         # embedded nodes tensor
@@ -184,27 +196,22 @@ class GraphLoader(object):
     def nodes(self):
         return np.array(self.nodes_)
 
-    @property
-    def graph_ids(self) -> List[str]:
-        return list(set(map(lambda n: n.graph_id, self.nodes_)))
-
-    def get_node_ids_by_graph_id(self, graph_id) -> List[int]:
-        node_ids = np.array([n.graph_node_id for n in self.nodes_ if n.graph_id == graph_id]).reshape(-1, 1)
-        return self.node_ids_enc.transform(node_ids)
-
     def get_node_by_id(self, id: int) -> Union[Node, None]:
-        for node in self.nodes_:
-            if node.id == id:
-                return node
+        return self.nodes_dict.get(id)
 
     def get_nodes_by_ids(self, ids: List[int]) -> List[Node]:
-        return [n for n in self.nodes_ if n.id in ids]
+        return [self.get_node_by_id(id) for id in ids]
 
-    def get_nodes_by_parent_id(self, parent_id: int) -> List[Node]:
-        return [n for n in self.nodes_ if n.parent_id == parent_id]
+    def get_node_children_recursive(self, n: Node) -> List[Node]:
+        return self.get_node_children_recursive_by_id(n.id)
 
-    def get_node_children(self, n: Node) -> List[Node]:
-        return self.get_nodes_by_parent_id(n.id)
+    def get_node_children_recursive_by_id(self, id: int) -> List[Node]:
+        tree_data = nx.tree_data(self.g_nx, id)
+        tree_graph = nx.tree_graph(tree_data)
+        return [self.get_node_by_id(nid) for nid in tree_graph.nodes() if nid != id]
+
+    def get_node_children_by_id(self, id: int) -> List[Node]:
+        return [n for n in self.nodes_ if n.parent_id == id]
 
     @property
     def unique_features_idx(self):
@@ -230,11 +237,6 @@ class GraphLoader(object):
         return np.intersect1d(self.unique_features_idx, self.available_features_idx)
 
     @property
-    def unique_node_features(self):
-        unique_available_features = np.array(self.nodes_features_enc.feature_names_)[self.unique_available_features_idx]
-        return unique_available_features
-
-    @property
     def unique_node_feature_pairs_idx(self):
         """
         2-dimensional node-feature pairs index
@@ -253,7 +255,10 @@ class GraphLoader(object):
 
     @property
     def unique_node_feature_id_dict(self) -> Dict[int, str]:
-        return {n.id: f for n, f in self.unique_node_feature_pairs}
+        if self._unique_node_feature_id_dict is not None:
+            return self._unique_node_feature_id_dict
+        self._unique_node_feature_id_dict = {n.id: f for n, f in self.unique_node_feature_pairs}
+        return self._unique_node_feature_id_dict
 
     def _get_node_previous_siblings(self, node: Node) -> List[Node]:
         return [n for n in self.nodes_ if n.parent_id == node.parent_id
@@ -268,26 +273,36 @@ class GraphLoader(object):
                 and node_feature_classes_set.issubset(set(n.feature_classes))]
 
     def get_node_css_selector_repr(self, node: Node, numbered: bool = True) -> str:
+        if numbered:
+            return self._get_node_css_selector_repr(node, numbered)
+
+        if self._css_selector_repr_cache.get(node.id):
+            return self._get_node_css_selector_repr(node, numbered)
+
+        self._css_selector_repr_cache[node.id] = self._get_node_css_selector_repr(node, numbered)
+        return self._css_selector_repr_cache.get(node.id)
+
+    def _get_node_css_selector_repr(self, node: Node, numbered: bool = True) -> str:
         # id
         if node.feature_id is not None:
             return f'{node.feature_tag}#{node.feature_id}'
 
         # class
         elif len(node.feature_classes) > 0:
-            previous_siblings = self._get_node_previous_siblings_with_classes(node)
-            length = len(previous_siblings) + 1
-            if numbered and length > 1:
-                return f'{node.feature_tag}.{".".join(node.feature_classes)}:nth-child({length})'
-            else:
-                return f'{node.feature_tag}.{".".join(node.feature_classes)}'
+            if numbered:
+                previous_siblings = self._get_node_previous_siblings_with_classes(node)
+                length = len(previous_siblings) + 1
+                if length > 1:
+                    return f'{node.feature_tag}.{".".join(node.feature_classes)}:nth-child({length})'
+            return f'{node.feature_tag}.{".".join(node.feature_classes)}'
 
         # tag
         else:
-            length = len(self._get_node_previous_siblings(node)) + 1
-            if numbered and length > 1:
-                return f'{node.feature_tag}:nth-child({length})'
-            else:
-                return f'{node.feature_tag}'
+            if numbered:
+                length = len(self._get_node_previous_siblings(node)) + 1
+                if length > 1:
+                    return f'{node.feature_tag}:nth-child({length})'
+            return f'{node.feature_tag}'
 
     @staticmethod
     def _get_node_css_selector_repr_from_feature(feat: str):
@@ -299,18 +314,22 @@ class GraphLoader(object):
         else:
             return f'[{k}="{v}"]'
 
-    def get_node_css_selector_path(self, node: Node) -> str:
+    def get_node_css_selector_path(self, node: Node, root_id: int = None, numbered: bool = True) -> str:
         # return if no parent
         if node.parent_id is None:
-            return self.get_node_css_selector_repr(node)
+            return self.get_node_css_selector_repr(node=node, numbered=numbered)
 
         # css selector path
-        path = [self.get_node_css_selector_repr(node)]
+        path = [self.get_node_css_selector_repr(node=node, numbered=numbered)]
 
         # iterate node parent until reaching end condition
         while node.parent_id is not None:
             # parent
             parent = self.get_node_by_id(node.parent_id)
+
+            # end if parent is root
+            if root_id is not None and parent.id == root_id:
+                break
 
             # end if no parent
             if parent is None:
@@ -323,7 +342,7 @@ class GraphLoader(object):
                 break
 
             # add to path
-            parent_path = self.get_node_css_selector_repr(parent)
+            parent_path = self.get_node_css_selector_repr(parent, numbered=numbered)
             path.insert(0, parent_path)
 
             # set node to its parent
@@ -334,5 +353,5 @@ class GraphLoader(object):
 
 if __name__ == '__main__':
     data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/quotes.toscrape.com/json/http___quotes_toscrape_com_.json'
-    loader = GraphLoader(data_path)
+    loader = GraphLoader(json_path=data_path)
     loader.run()

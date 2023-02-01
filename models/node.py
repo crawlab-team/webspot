@@ -11,18 +11,6 @@ class Node(dict):
         return self.get('parent_id')
 
     @property
-    def graph_id(self) -> int:
-        return self.get('graph_id')
-
-    @property
-    def graph_node_id(self) -> str:
-        return f'{self.graph_id}.{self.id}'
-
-    @property
-    def graph_parent_id(self) -> str:
-        return f'{self.graph_id}.{self.parent_id}'
-
-    @property
     def features(self) -> List[Tuple[str, str]]:
         return self.get('features')
 
@@ -51,3 +39,7 @@ class Node(dict):
             if k == 'id':
                 return v
         return None
+
+    @property
+    def text(self) -> str:
+        return self.get('text')

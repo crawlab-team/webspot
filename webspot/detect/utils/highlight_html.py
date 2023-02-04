@@ -4,7 +4,7 @@ from typing import List
 
 from bs4 import BeautifulSoup, Tag
 
-from detect.models.list_result import ListResult
+from webspot.detect.models.list_result import ListResult
 
 
 def get_embed_css() -> str:
@@ -21,13 +21,13 @@ def highlight_html(html, results: List[ListResult]) -> str:
         list_el = soup.select_one(list_rule)
         if not list_el:
             continue
-        _add_class(list_el, ['highlight-container', 'highlight-list-node'])
+        _add_class(list_el, ['webspot-highlight-container', 'webspot-highlight-list-node'])
 
         # items
         items_rule = result.extract_rules.get('items')
         item_els = list_el.select(items_rule)
         for item_el in item_els:
-            _add_class(item_el, ['highlight-container', 'highlight-item-node'])
+            _add_class(item_el, ['webspot-highlight-container', 'webspot-highlight-item-node'])
 
             # fields
             for field in result.extract_rules.get('fields'):
@@ -37,7 +37,7 @@ def highlight_html(html, results: List[ListResult]) -> str:
                     logging.warning(e)
                     field_els = []
                 for field_el in field_els:
-                    _add_class(field_el, ['highlight-container', 'highlight-item-field-node'])
+                    _add_class(field_el, ['webspot-highlight-container', 'webspot-highlight-item-field-node'])
 
     # add embed css
     style_el = soup.new_tag('style')

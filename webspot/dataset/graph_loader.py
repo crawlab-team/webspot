@@ -1,7 +1,5 @@
 import json
-import os
-import re
-from typing import List, Iterator, Tuple, Dict, Union
+from typing import List, Tuple, Dict, Union
 
 import dgl
 import networkx as nx
@@ -12,7 +10,7 @@ from sklearn.feature_extraction import DictVectorizer
 from sklearn.preprocessing import LabelEncoder
 from dgl import DGLGraph
 
-from models.node import Node
+from webspot.models.node import Node
 
 
 class GraphLoader(object):

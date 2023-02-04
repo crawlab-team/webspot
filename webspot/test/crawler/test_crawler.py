@@ -1,13 +1,11 @@
-import os.path
-import time
 import unittest
 from io import StringIO
 from unittest.mock import patch
 
 from scrapy.crawler import CrawlerProcess
 
-from crawler.actions.run_crawler import run_crawler
-from crawler.crawler.spiders.web_spider import WebSpider
+from webspot.crawler.actions.run_crawler import run_crawler
+from webspot.crawler.crawler import WebSpider
 
 
 class TestCrawler(unittest.TestCase):

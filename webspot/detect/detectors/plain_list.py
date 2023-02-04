@@ -13,11 +13,11 @@ from scipy.stats import entropy
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import normalize
 
-from dataset.graph_loader import GraphLoader
-from detect.utils.highlight_html import highlight_html
-from detect.models.field import Field
-from detect.models.list_result import ListResult
-from detect.utils.transform_html_links import transform_html_links
+from webspot.dataset.graph_loader import GraphLoader
+from webspot.detect.utils.highlight_html import highlight_html
+from webspot.detect.models.field import Field
+from webspot.detect.models.list_result import ListResult
+from webspot.detect.utils.transform_html_links import transform_html_links
 
 
 class PlainListDetector(object):
@@ -81,6 +81,10 @@ class PlainListDetector(object):
     @property
     def html_base64(self):
         return base64.b64encode(self.html.encode('utf-8')).decode('utf-8')
+
+    @property
+    def results_base64(self):
+        return base64.b64encode(json.dumps(self.results).encode('utf-8')).decode('utf-8')
 
     def _request(self):
         res = requests.get(self.url)

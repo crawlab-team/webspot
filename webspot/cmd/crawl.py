@@ -1,4 +1,4 @@
-from crawler.actions.run_crawler import run_crawler
+from webspot.crawler.actions.run_crawler import run_crawler
 
 
 def cmd_crawl(args):

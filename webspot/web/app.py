@@ -1,17 +1,19 @@
-import base64
+import os.path
 
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from starlette.responses import HTMLResponse
 from starlette.staticfiles import StaticFiles
 
-from detect.detectors.plain_list import PlainListDetector
+from webspot.detect.detectors.plain_list import PlainListDetector
+
+root_path = os.path.abspath(os.path.dirname(__file__))
 
 app = FastAPI()
 
-app.mount('/static', StaticFiles(directory='web/static'), name='static')
+app.mount('/static', StaticFiles(directory=os.path.join(root_path, 'static')), name='static')
 
-templates = Jinja2Templates(directory='web/templates')
+templates = Jinja2Templates(directory=root_path)
 
 
 @app.get('/', response_class=HTMLResponse)
@@ -22,6 +24,6 @@ async def root(request: Request):
     return templates.TemplateResponse('index.html', {
         'request': request,
         'url': request.query_params.get('url'),
-        'results': detector.results,
         'html': detector.html_base64,
+        'results': detector.results_base64,
     })

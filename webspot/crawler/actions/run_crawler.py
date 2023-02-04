@@ -2,7 +2,7 @@ from typing import List
 
 from scrapy.crawler import CrawlerProcess
 
-from crawler.crawler.spiders.web_spider import WebSpider
+from webspot.crawler.crawler.spiders.web_spider import WebSpider
 
 
 def run_crawler(domain: str, urls: List[str], url_paths: List[str] = None, data_root_dir: str = None, **kwargs):

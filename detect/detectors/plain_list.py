@@ -1,3 +1,4 @@
+import base64
 import json
 import logging
 import os.path
@@ -13,22 +14,24 @@ from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import normalize
 
 from dataset.graph_loader import GraphLoader
+from detect.utils.highlight_html import highlight_html
 from detect.models.field import Field
 from detect.models.list_result import ListResult
+from detect.utils.transform_html_links import transform_html_links
 
 
 class PlainListDetector(object):
     def __init__(
-            self,
-            url: str = None,
-            json_data: str = None,
-            json_path: str = None,
-            save_path: str = None,
-            dbscan_eps: float = 0.5,
-            dbscan_min_samples: int = 3,
-            entropy_threshold: float = 1e-3,
-            embed_walk_length: int = 5,
-            item_nodes_samples=5,
+        self,
+        url: str = None,
+        json_data: str = None,
+        json_path: str = None,
+        save_path: str = None,
+        dbscan_eps: float = 0.5,
+        dbscan_min_samples: int = 3,
+        entropy_threshold: float = 1e-3,
+        embed_walk_length: int = 5,
+        item_nodes_samples=5,
     ):
         # settings
         self.url = url
@@ -50,6 +53,9 @@ class PlainListDetector(object):
                     os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'detect', 'plain_list',
                                  self.json_path.split('/')[-1]))
 
+        # data
+        self._html = None
+
         # request html page if url exists
         if self.url:
             self._request()
@@ -65,9 +71,21 @@ class PlainListDetector(object):
         # data
         self.results: List[ListResult] = []
 
+    @property
+    def html(self):
+        html = self._html
+        html = transform_html_links(html, self.url)
+        html = highlight_html(html, self.results)
+        return html
+
+    @property
+    def html_base64(self):
+        return base64.b64encode(self.html.encode('utf-8')).decode('utf-8')
+
     def _request(self):
         res = requests.get(self.url)
-        self.json_data = html_to_json_enhanced.convert(res.content.decode('utf-8'), with_id=True)
+        self._html = res.content.decode('utf-8')
+        self.json_data = html_to_json_enhanced.convert(self._html, with_id=True)
 
     def _get_nodes_features_tags_attrs(self, nodes_idx: np.ndarray = None):
         """

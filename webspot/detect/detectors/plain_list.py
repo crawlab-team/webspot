@@ -9,6 +9,7 @@ import html_to_json_enhanced
 import numpy as np
 import pandas as pd
 import requests
+from bs4 import BeautifulSoup
 from scipy.stats import entropy
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import normalize
@@ -144,12 +145,25 @@ class PlainListDetector(object):
                                                                                     numbered=False)
                     fields_extract_rules_set.add(extract_rule_css)
 
-        for extract_rule_css in fields_extract_rules_set:
+        for i, extract_rule_css in enumerate(fields_extract_rules_set):
             fields.append(Field({
-                'name': hash(extract_rule_css),
-                'extract_rule_css': extract_rule_css,
+                'name': f'Field {i + 1}',
+                'selector': extract_rule_css,
             }))
         return fields
+
+    @staticmethod
+    def _extract_data(soup: BeautifulSoup, items_selector_full: str, fields: List[Field]):
+        data = []
+        for item_el in soup.select(items_selector_full):
+            row = {}
+            for f in fields:
+                try:
+                    row[f.name] = item_el.select_one(f.selector).text.strip()
+                except Exception as e:
+                    logging.warning(e)
+            data.append(row)
+        return data
 
     def _train(self):
         self.dbscan.fit(self._get_nodes_features())
@@ -214,7 +228,13 @@ class PlainListDetector(object):
 
         self.results = sorted(self.results, key=lambda x: x.stats.score, reverse=True)
 
+        # assign name
+        for i, result in enumerate(self.results):
+            self.results[i]['name'] = f'List {i + 1}'
+
     def _extract(self):
+        soup = BeautifulSoup(self._html)
+
         for i, result in enumerate(self.results):
             # list node
             list_node = result.list_node
@@ -234,11 +254,15 @@ class PlainListDetector(object):
             # fields node extract rule
             fields_node_extract_rule_css = self._extract_fields_by_id(list_node.id)
 
+            # data
+            data = self._extract_data(soup, items_node_extract_rule_css_full, fields_node_extract_rule_css)
+
             self.results[i]['extract_rules_css'] = {
                 'list': list_node_extract_rule_css,
                 'items': items_node_extract_rule_css,
                 'items_full': items_node_extract_rule_css_full,
                 'fields': fields_node_extract_rule_css,
+                'data': data,
             }
 
     def _save(self):

@@ -15,29 +15,32 @@ def get_embed_css() -> str:
 
 def highlight_html(html, results: List[ListResult]) -> str:
     soup = BeautifulSoup(html, 'html.parser')
-    for result in results:
+    for i, result in enumerate(results):
         # list
         list_rule = result.extract_rules.get('list')
         list_el = soup.select_one(list_rule)
         if not list_el:
             continue
         _add_class(list_el, ['webspot-highlight-container', 'webspot-highlight-list-node'])
+        _add_label(list_el, soup, f'List {i + 1}', 'primary')
 
         # items
         items_rule = result.extract_rules.get('items')
         item_els = list_el.select(items_rule)
-        for item_el in item_els:
+        for j, item_el in enumerate(item_els):
             _add_class(item_el, ['webspot-highlight-container', 'webspot-highlight-item-node'])
+            # _add_label(item_el, soup, f'Item {j + 1}', 'warning')
 
             # fields
-            for field in result.extract_rules.get('fields'):
+            for k, field in enumerate(result.extract_rules.get('fields')):
                 try:
-                    field_els = item_el.select(field.get('extract_rule_css'))
+                    field_els = item_el.select(field.get('selector'))
                 except Exception as e:
                     logging.warning(e)
                     field_els = []
                 for field_el in field_els:
                     _add_class(field_el, ['webspot-highlight-container', 'webspot-highlight-item-field-node'])
+                    # _add_label(field_el, soup, f'Field {k + 1}', 'success')
 
     # add embed css
     style_el = soup.new_tag('style')
@@ -55,3 +58,13 @@ def _add_class(el: Tag, classes: List[str]):
         el['class'] = ' '.join([el_class, *classes])
     elif isinstance(el_class, list):
         el['class'] = ' '.join([*el_class, *classes])
+
+
+def _add_label(el: Tag, soup: BeautifulSoup, label: str, type_: str = None):
+    label_el = soup.new_tag('div')
+    label_el.append(label)
+    el.append(label_el)
+    _add_class(label_el, ['webspot-highlight-label'])
+    if type_:
+        _add_class(label_el, [f'webspot-highlight-label-{type_}'])
+    pass

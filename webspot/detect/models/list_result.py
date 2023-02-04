@@ -6,6 +6,10 @@ from webspot.models.node import Node
 
 class ListResult(dict):
     @property
+    def name(self) -> str:
+        return self.get('name')
+
+    @property
     def item_nodes(self) -> List[Node]:
         return self.get('nodes').get('items')
 
@@ -23,4 +27,5 @@ class ListResult(dict):
             'list': self.get('extract_rules_css').get('list'),
             'items': self.get('extract_rules_css').get('items'),
             'fields': self.get('extract_rules_css').get('fields'),
+            'data': self.get('extract_rules_css').get('data'),
         }

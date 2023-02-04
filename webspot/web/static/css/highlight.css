@@ -60,3 +60,31 @@
   border: 1px solid var(--color-green);
   background: var(--color-green);
 }
+
+.webspot-highlight-label {
+  position: absolute;
+  overflow: visible;
+  top: 0;
+  right: 0;
+  z-index: 9999;
+  background: var(--color-light-grey);
+  padding: 2px 4px;
+  border-radius: 2px;
+  font-size: 12px;
+}
+
+.webspot-highlight-label-primary {
+  color: var(--color-blue);
+}
+
+.webspot-highlight-label-warning {
+  color: var(--color-orange);
+}
+
+.webspot-highlight-label-success {
+  color: var(--color-green);
+}
+
+.webspot-highlight-label-danger {
+  color: var(--color-red);
+}

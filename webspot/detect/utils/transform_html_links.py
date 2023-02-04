@@ -6,17 +6,17 @@ from bs4 import BeautifulSoup, Tag
 def transform_html_links(html: str, url: str) -> str:
     soup = BeautifulSoup(html, 'html.parser')
 
-    for link_el in soup.select('a'):
-        _transform_a(link_el, url)
+    for el in soup.select('a'):
+        _transform_a(el, url)
 
-    for link_el in soup.select('img'):
-        _transform(link_el, 'src', url)
+    for el in soup.select('img'):
+        _transform(el, 'src', url)
 
-    for link_el in soup.select('link'):
-        _transform(link_el, 'href', url)
+    for el in soup.select('link'):
+        _transform(el, 'href', url)
 
-    for link_el in soup.select('script'):
-        _transform(link_el, 'src', url)
+    for el in soup.select('script'):
+        el.decompose()
 
     return str(soup)
 

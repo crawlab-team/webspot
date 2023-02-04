@@ -4,5 +4,5 @@ class Field(dict):
         return self.get('name')
 
     @property
-    def extract_rule(self):
-        return self.get('extract_rule_css')
+    def selector(self):
+        return self.get('selector')

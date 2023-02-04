@@ -36,7 +36,7 @@ jobs:
       - name: Check version
         run: |
           version=`python setup.py --version`
-          res=`curl https://pypi.org/project/${{ env.PACKAGE_NAME }}/${version}/ -i -s | grep 'HTTP/2 404' | true`
+          res=`curl https://pypi.org/project/${{ env.PACKAGE_NAME }}/${version}/ -i -s | grep 'HTTP/2 404'`
           if [[ $res =~ 404 ]]; then
             echo "is_matched=1" >> $GITHUB_ENV
           else

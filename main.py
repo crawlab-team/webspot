@@ -19,6 +19,7 @@ crawl_parser.add_argument('--data-root-dir', '-d', help='root directory to store
 crawl_parser.set_defaults(func=cmd_crawl)
 
 web_parser = subparsers.add_parser('web')
+web_parser.add_argument('--port', '-p', default=8000, type=int, help='port')
 web_parser.add_argument('--log-level', '-L', default='debug', help='log level')
 web_parser.set_defaults(func=cmd_web)
 

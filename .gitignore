@@ -135,3 +135,4 @@ data/
 _trial_temp
 .models
 tmp/
+node_modules/

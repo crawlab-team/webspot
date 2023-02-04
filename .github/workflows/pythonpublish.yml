@@ -1,0 +1,55 @@
+name: Upload Python Package
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types:
+      - opened
+
+env:
+  PACKAGE_NAME: webspot
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel
+          pip install -r requirements.txt
+
+      - name: Unit Test
+        run: |
+          python setup.py install
+          python -m unittest webspot.test
+
+      - name: Check version
+        run: |
+          version=`python setup.py --version`
+          res=`curl https://pypi.org/project/${{ env.PACKAGE_NAME }}/${version}/ -i -s | grep 'HTTP/2 404' | true`
+          if [[ $res =~ 404 ]]; then
+            echo "is_matched=0" >> $GITHUB_ENV
+          else:
+            echo "is_matched=1" >> $GITHUB_ENV
+          fi
+
+      - name: Build and publish
+        if: ${{ env.is_matched == '1' }}
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: |
+          cd _ext/python
+          python setup.py sdist bdist_wheel
+          pip install twine
+          twine upload dist/*

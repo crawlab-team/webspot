@@ -60,4 +60,4 @@ jobs:
         with:
           app-name: 'webspot'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_78E538583A37458D85035E257A5680FC }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_7A83777F6DC246398B302488C49D5907 }}

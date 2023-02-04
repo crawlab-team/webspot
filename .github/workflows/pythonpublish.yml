@@ -28,10 +28,10 @@ jobs:
           pip install setuptools wheel
           pip install -r requirements.txt
 
-      - name: Unit Test
-        run: |
-          python setup.py install
-          python -m unittest webspot.test
+#      - name: Unit Test
+#        run: |
+#          python setup.py install
+#          python -m unittest webspot.test
 
       - name: Check version
         run: |

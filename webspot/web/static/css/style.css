@@ -13,6 +13,7 @@ body {
   padding: 0;
   position: relative;
   font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, Arial, sans-serif;
+  overflow: hidden;
 }
 
 .top-navbar {
@@ -40,11 +41,7 @@ body {
 
 .nav-sidebar {
   max-width: 240px;
-}
-
-.nav-sidebar {
-  height: 100%;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .preview-container {

@@ -2,7 +2,7 @@ scrapy==2.7.1
 html-to-json-enhanced>=1.0.4
 scikit-learn==1.2.0
 torch==1.13.0
-dgl==0.9
+dgl==0.9.1
 jupyter==1.0.0
 matplotlib==3.6.3
 seaborn==0.12.2

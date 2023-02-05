@@ -11,7 +11,8 @@ RUN echo `python --version`
 COPY ./requirements.txt /app
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
-#RUN pip install dgl -f https://data.dgl.ai/wheels/repo.html
+RUN pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
+RUN pip install dgl -f https://data.dgl.ai/wheels/repo.html
 
 # Add source code
 ADD . /app

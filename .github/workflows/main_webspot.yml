@@ -30,11 +30,9 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
-          pip freeze > requirements.txt
-          pip install dgl -f https://data.dgl.ai/wheels/repo.html
-          echo 'dgl==0.9.1' >> requirements.txt
-          pip freeze
+          echo 'https://download.pytorch.org/whl/cpu/torch-1.13.1%2Bcpu-cp310-cp310-linux_x86_64.whl' >> requirements.txt
+          echo 'https://data.dgl.ai/wheels/dgl-0.9.1-cp310-cp310-manylinux1_x86_64.whl' >> requirements.txt
+          cat requirements.txt
 
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 

@@ -43,3 +43,10 @@ jobs:
           IMAGE_VERSION=${{needs.setup.outputs.version}}
           docker tag image $IMAGE_NAME:$IMAGE_VERSION
           docker push $IMAGE_NAME:$IMAGE_VERSION
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [ publish ]
+    steps:
+      - name: Invoke webhook
+        run: curl ${{ secrets.WEBHOOK_URL }}

@@ -22,4 +22,4 @@ ENV PORT 80
 EXPOSE 80
 
 ENTRYPOINT ["python", "main.py"]
-CMD ["web", "-p", "80"]
+CMD ["web"]

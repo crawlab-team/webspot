@@ -30,7 +30,7 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         push: true
-        tags: index.docker.io/${{ secrets.AzureAppService_ContainerUsername_b67dc7551a7640fd84904c3f06b06f4a }}/crawlabteam/webspot:${{ github.sha }}
+        tags: index.docker.io/crawlabteam/webspot:${{ github.sha }}
         file: ./Dockerfile
 
   deploy:
@@ -48,4 +48,4 @@ jobs:
         app-name: 'webspot'
         slot-name: 'production'
         publish-profile: ${{ secrets.AzureAppService_PublishProfile_91acb51a4d5d460ea2950d8e6e4f300f }}
-        images: 'index.docker.io/${{ secrets.AzureAppService_ContainerUsername_b67dc7551a7640fd84904c3f06b06f4a }}/crawlabteam/webspot:${{ github.sha }}'
+        images: 'index.docker.io/crawlabteam/webspot:${{ github.sha }}'

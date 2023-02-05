@@ -23,14 +23,14 @@ jobs:
       uses: docker/login-action@v1
       with:
         registry: https://index.docker.io/v1/
-        username: ${{ secrets.AzureAppService_ContainerUsername_3540f645c93f4011ba70816fd361e9b1 }}
-        password: ${{ secrets.AzureAppService_ContainerPassword_fd1df37ce5314687847b34bc0e49d3f5 }}
+        username: ${{ secrets.AzureAppService_ContainerUsername_b67dc7551a7640fd84904c3f06b06f4a }}
+        password: ${{ secrets.AzureAppService_ContainerPassword_579bd25bc5614aa1a0c94ceafb2af043 }}
 
     - name: Build and push container image to registry
       uses: docker/build-push-action@v2
       with:
         push: true
-        tags: index.docker.io/${{ secrets.AzureAppService_ContainerUsername_3540f645c93f4011ba70816fd361e9b1 }}/crawlabteam/webspot:${{ github.sha }}
+        tags: index.docker.io/${{ secrets.AzureAppService_ContainerUsername_b67dc7551a7640fd84904c3f06b06f4a }}/crawlabteam/webspot:${{ github.sha }}
         file: ./Dockerfile
 
   deploy:
@@ -47,5 +47,5 @@ jobs:
       with:
         app-name: 'webspot'
         slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_ae253db19cfa4f11a700dcec80813b06 }}
-        images: 'index.docker.io/${{ secrets.AzureAppService_ContainerUsername_3540f645c93f4011ba70816fd361e9b1 }}/crawlabteam/webspot:${{ github.sha }}'
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_91acb51a4d5d460ea2950d8e6e4f300f }}
+        images: 'index.docker.io/${{ secrets.AzureAppService_ContainerUsername_b67dc7551a7640fd84904c3f06b06f4a }}/crawlabteam/webspot:${{ github.sha }}'

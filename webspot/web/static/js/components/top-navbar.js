@@ -14,7 +14,12 @@ export default {
       emit('change', value);
     };
     const onSubmit = () => {
-      window.location.href = `/?url=${internalUrl.value}`;
+      // replace query string "url" with the value of internalUrl
+      const url = new URL(window.location.href);
+      url.searchParams.set('url', internalUrl.value);
+
+      // navigate to the new url
+      window.location.href = url.href;
     };
     return {
       url: props.url,

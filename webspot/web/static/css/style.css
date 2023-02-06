@@ -29,6 +29,15 @@ body {
   box-shadow: 0 3px 10px #999999;
 }
 
+.top-navbar .logo-wrapper {
+  margin-right: 10px;
+  height: 36px;
+}
+
+.top-navbar .logo-wrapper img {
+  height: 100%;
+}
+
 .main-container {
   position: absolute;
   top: 48px;

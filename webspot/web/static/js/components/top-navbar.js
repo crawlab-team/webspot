@@ -29,6 +29,9 @@ export default {
     };
   },
   template: `<div class="top-navbar">
+  <div class="logo-wrapper">
+    <img src="/static/img/logo.svg">
+  </div>
   <div class="url-wrapper" style="display: flex; flex: 0 0 360px;">
     <el-input id="url" type="text" placeholder="Enter URL" v-model="internalUrl" @change="onUrlChange" @keyup.enter="onSubmit"/>
     <el-button type="primary" @click="onSubmit" style="margin-left: 5px">Submit</el-button>

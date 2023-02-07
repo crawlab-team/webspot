@@ -16,13 +16,17 @@ app.mount('/static', StaticFiles(directory=os.path.join(root_path, 'static')), n
 templates = Jinja2Templates(directory=root_path)
 
 
-@app.get('/')
-async def root():
-    return {'status': 'ok'}
-
-
-@app.get('/detect', response_class=HTMLResponse)
+@app.get('/', response_class=HTMLResponse)
 async def detect(request: Request):
+    url = request.query_params.get('url')
+    if url is None or url == '':
+        return templates.TemplateResponse('index.html', {
+            'request': request,
+            'url': '',
+            'html': '',
+            'results': '',
+        })
+
     detector = PlainListDetector(url=request.query_params.get('url'))
     detector.run()
 

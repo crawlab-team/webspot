@@ -26,7 +26,7 @@ def transform_html_links(html: str, url: str) -> str:
 
 
 def _transform(el: Tag, key: str, root_url: str):
-    if el.get(key) and not re.search(el[key], r'^(https?:)?//'):
+    if el.get(key) and not re.search(re.escape(el[key]), r'^(https?:)?//'):
         el[key] = urljoin(root_url, el[key])
 
 

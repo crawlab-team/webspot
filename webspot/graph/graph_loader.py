@@ -15,7 +15,7 @@ from webspot.graph.models.node import Node
 
 class GraphLoader(object):
     def __init__(self, json_data: str = None, json_path: str = None, file_pattern: str = None, body_only: bool = True,
-                 embed_walk_length: int = 5):
+                 embed_walk_length: int = 3):
         # settings
         self.json_data = json_data
         self.json_path = json_path
@@ -65,8 +65,6 @@ class GraphLoader(object):
     @property
     def g_nx(self) -> nx.Graph:
         g_nx = self.g_dgl.to_networkx()
-        min_node_id = min([n.id for n in self.nodes_])
-        g_nx.remove_nodes_from(range(min_node_id))
         return g_nx
 
     def load_graph_data(self):
@@ -158,7 +156,8 @@ class GraphLoader(object):
 
     def load_tensors(self):
         # nodes tensor
-        self.nodes_ids_tensor = torch.LongTensor([n.id for n in self.nodes_])
+        encoded_nodes = self.node_ids_enc.transform([n.id for n in self.nodes_])
+        self.nodes_ids_tensor = torch.LongTensor(encoded_nodes)
 
         # nodes features tensor
         features = self.nodes_features_enc.fit_transform(self.nodes_features).todense()
@@ -168,8 +167,10 @@ class GraphLoader(object):
         self.edge_nodes = [n for n in self.nodes_ if self.nodes_dict.get(n.parent_id) is not None]
 
         # edges tensors
-        self.edges_source_tensor = torch.LongTensor([n.parent_id for n in self.edge_nodes])
-        self.edges_target_tensor = torch.LongTensor([n.id for n in self.edge_nodes])
+        encoded_source = self.node_ids_enc.transform([n.parent_id for n in self.edge_nodes])
+        encoded_target = self.node_ids_enc.transform([n.id for n in self.edge_nodes])
+        self.edges_source_tensor = torch.LongTensor(encoded_source)
+        self.edges_target_tensor = torch.LongTensor(encoded_target)
 
     def load_dgl_graph(self):
         self.g_dgl = dgl.graph((self.edges_source_tensor, self.edges_target_tensor))
@@ -177,8 +178,8 @@ class GraphLoader(object):
     def load_embeddings(self):
         # embedded nodes tensor
         self.nodes_embedded_tensor = dgl.sampling.node2vec_random_walk(
-            self.g_dgl,
-            self.nodes_ids_tensor,
+            g=self.g_dgl,
+            nodes=self.nodes_ids_tensor,
             p=1,
             q=1,
             walk_length=self.embed_walk_length,
@@ -204,9 +205,11 @@ class GraphLoader(object):
         return self.get_node_children_recursive_by_id(n.id)
 
     def get_node_children_recursive_by_id(self, id: int) -> List[Node]:
-        tree_data = nx.tree_data(self.g_nx, id)
+        idx = self.node_ids_enc.transform([id])[0]
+        tree_data = nx.tree_data(self.g_nx, idx)
         tree_graph = nx.tree_graph(tree_data)
-        return [self.get_node_by_id(nid) for nid in tree_graph.nodes() if nid != id]
+        child_ids = self.node_ids_enc.inverse_transform([nid for nid in tree_graph.nodes() if nid != idx])
+        return [self.get_node_by_id(cid) for cid in child_ids]
 
     def get_node_children_by_id(self, id: int) -> List[Node]:
         return [n for n in self.nodes_ if n.parent_id == id]

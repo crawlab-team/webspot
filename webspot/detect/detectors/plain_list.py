@@ -28,24 +28,35 @@ class PlainListDetector(object):
         url: str = None,
         json_data: str = None,
         json_path: str = None,
+        html_path: str = None,
         save_path: str = None,
         dbscan_eps: float = 0.5,
         dbscan_min_samples: int = 3,
+        dbscan_metric: str = 'euclidean',
         entropy_threshold: float = 1e-3,
         embed_walk_length: int = 5,
-        item_nodes_samples=5,
-        request_method='rod',
-        request_rod_url='http://localhost:7777/request',
+        item_nodes_samples: int = 5,
+        node2vec_ratio: float = 1.,
+        request_method: str = 'rod',
+        request_rod_url: str = 'http://localhost:7777/request',
     ):
         # settings
         self.url = url
         self.json_data = json_data
         self.json_path = json_path
+        self.html_path = html_path
         self.entropy_threshold = entropy_threshold
         self.item_nodes_samples = item_nodes_samples
+        self.node2vec_ratio = node2vec_ratio
         self.request_method = request_method
         self.request_rod_url = request_rod_url
-        assert self.url or self.json_data or self.json_path, 'url or json_data or json_path is required'
+
+        # validate
+        if not self.url:
+            if self.json_path:
+                assert self.html_path, 'html_path is required if json_path is provided and url is not provided'
+            else:
+                assert self.json_data, 'json_data is required if json_path is not provided and url is not provided'
 
         # save path
         self.save_path = save_path
@@ -65,6 +76,9 @@ class PlainListDetector(object):
         # request html page if url exists
         if self.url:
             self._request()
+        else:
+            with open(self.html_path, 'r') as f:
+                self._html = f.read()
 
         # graph loader
         self.graph_loader = GraphLoader(json_data=self.json_data, json_path=self.json_path,
@@ -72,7 +86,11 @@ class PlainListDetector(object):
         self.graph_loader.run()
 
         # dbscan clustering model
-        self.dbscan = DBSCAN(eps=dbscan_eps, min_samples=dbscan_min_samples)
+        self.dbscan = DBSCAN(
+            metric=dbscan_metric,
+            eps=dbscan_eps,
+            min_samples=dbscan_min_samples,
+        )
 
         # data
         self.results: List[ListResult] = []
@@ -105,19 +123,26 @@ class PlainListDetector(object):
         else:
             features = self.graph_loader.nodes_features_tensor.detach().numpy()[nodes_idx].sum(axis=1)
 
-        return normalize(features, norm='l1', axis=1)
+        return normalize(
+            features,
+            norm='l1',
+            axis=1,
+        )
 
     def _get_nodes_features_node2vec(self, nodes_idx: np.ndarray = None):
         """
         nodes features (node2vec)
         """
         if nodes_idx is None:
-            features = self.graph_loader.nodes_features_tensor.detach().numpy()
+            embedded_tensor = self.graph_loader.nodes_embedded_tensor
         else:
-            features = self.graph_loader.nodes_features_tensor.detach().numpy()[nodes_idx].sum(axis=1)
+            embedded_tensor = self.graph_loader.nodes_embedded_tensor[nodes_idx.T[0]]
+
+        embedded_features_tensor = self.graph_loader.nodes_features_tensor[embedded_tensor].sum(dim=1)
+        embedded_features = embedded_features_tensor.detach().numpy()
 
         return normalize(
-            features,
+            embedded_features,
             norm='l1',
             axis=1,
         )
@@ -126,9 +151,11 @@ class PlainListDetector(object):
         """
         nodes features (tags + attributes + node2vec)
         """
+        x1 = self._get_nodes_features_tags_attrs(nodes_idx)
+        x2 = self._get_nodes_features_node2vec(nodes_idx) * self.node2vec_ratio
         return normalize(
             np.concatenate(
-                (self._get_nodes_features_tags_attrs(nodes_idx), self._get_nodes_features_node2vec(nodes_idx)),
+                (x1, x2),
                 axis=1,
             ),
             norm='l2',
@@ -165,7 +192,8 @@ class PlainListDetector(object):
                 try:
                     row[f.name] = item_el.select_one(f.selector).text.strip()
                 except Exception as e:
-                    logging.warning(e)
+                    # logging.warning(e)
+                    continue
             data.append(row)
         return data
 
@@ -225,7 +253,7 @@ class PlainListDetector(object):
                 nodes_features_vec_norm = normalize(nodes_features_vec.sum(axis=0).reshape(1, -1), norm='l1')
                 score = entropy(nodes_features_vec_norm, axis=1)[0]
             except ValueError as e:
-                logging.warning(f'ValueError: {e}')
+                # logging.warning(f'ValueError: {e}')
                 score = 0
 
             self.results[i]['stats']['score'] = float(score)

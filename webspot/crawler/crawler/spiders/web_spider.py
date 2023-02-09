@@ -91,7 +91,7 @@ class WebSpider(scrapy.Spider):
         filename = os.path.join(self.data_json_dir, f'{filename_prefix}.json')
         with open(filename, 'w') as f:
             json_data = html_to_json_enhanced.convert(response.body, with_id=True)
-            f.write(json.dumps(json_data))
+            f.write(json.dumps(json_data, indent=2))
 
         # follow links
         for link in self.link_extractor.extract_links(response):

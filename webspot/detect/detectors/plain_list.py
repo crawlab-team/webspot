@@ -19,6 +19,7 @@ from webspot.detect.utils.highlight_html import highlight_html
 from webspot.detect.models.field import Field
 from webspot.detect.models.list_result import ListResult
 from webspot.detect.utils.transform_html_links import transform_html_links
+from webspot.request.get_html import get_html
 
 
 class PlainListDetector(object):
@@ -33,6 +34,8 @@ class PlainListDetector(object):
         entropy_threshold: float = 1e-3,
         embed_walk_length: int = 5,
         item_nodes_samples=5,
+        request_method='rod',
+        request_rod_url='http://localhost:7777/request',
     ):
         # settings
         self.url = url
@@ -40,6 +43,8 @@ class PlainListDetector(object):
         self.json_path = json_path
         self.entropy_threshold = entropy_threshold
         self.item_nodes_samples = item_nodes_samples
+        self.request_method = request_method
+        self.request_rod_url = request_rod_url
         assert self.url or self.json_data or self.json_path, 'url or json_data or json_path is required'
 
         # save path
@@ -88,8 +93,7 @@ class PlainListDetector(object):
         return base64.b64encode(json.dumps(self.results).encode('utf-8')).decode('utf-8')
 
     def _request(self):
-        res = requests.get(self.url)
-        self._html = res.content.decode('utf-8')
+        self._html = get_html(self.url, self.request_method, self.request_rod_url)
         self.json_data = html_to_json_enhanced.convert(self._html, with_id=True)
 
     def _get_nodes_features_tags_attrs(self, nodes_idx: np.ndarray = None):

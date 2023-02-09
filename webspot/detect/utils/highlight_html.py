@@ -36,7 +36,7 @@ def highlight_html(html, results: List[ListResult]) -> str:
                 try:
                     field_els = item_el.select(field.get('selector'))
                 except Exception as e:
-                    logging.warning(e)
+                    # logging.warning(e)
                     field_els = []
                 for field_el in field_els:
                     _add_class(field_el, ['webspot-highlight-container', 'webspot-highlight-item-field-node'])

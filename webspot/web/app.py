@@ -2,10 +2,15 @@ import os.path
 
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import select, insert
+from sqlalchemy.exc import NoResultFound
 from starlette.responses import HTMLResponse
 from starlette.staticfiles import StaticFiles
 
+from webspot.db.session import get_session
 from webspot.detect.detectors.plain_list import PlainListDetector
+from webspot.models.page import PageModel
+from webspot.models.request import RequestModel
 
 root_path = os.path.abspath(os.path.dirname(__file__))
 
@@ -27,8 +32,24 @@ async def detect(request: Request):
             'results': '',
         })
 
+    # create a detector and run with url
     detector = PlainListDetector(url=request.query_params.get('url'))
     detector.run()
+
+    # save to db
+    session = get_session()
+    try:
+        p = session.scalars(select(PageModel).where(PageModel.url == url)).one()
+    except NoResultFound:
+        p = session.execute(insert(PageModel).values(url=url).returning(PageModel)).scalar()
+    except Exception as e:
+        raise e
+    session.execute(insert(RequestModel).values(
+        page_id=p.id,
+        html=detector.html_base64,
+        results=detector.results_base64,
+    ))
+    session.commit()
 
     return templates.TemplateResponse('index.html', {
         'request': request,
@@ -36,3 +57,18 @@ async def detect(request: Request):
         'html': detector.html_base64,
         'results': detector.results_base64,
     })
+
+
+@app.get('/requests')
+async def requests(request: Request):
+    session = get_session()
+    stmt = select(RequestModel, PageModel) \
+        .join(PageModel, PageModel.id == RequestModel.page_id)
+    res = session.execute(stmt)
+    return {
+        'requests': [{
+            'id': r.RequestModel.id,
+            'page_id': r.PageModel.id,
+            'page_url': r.PageModel.url,
+        } for r in res],
+    }

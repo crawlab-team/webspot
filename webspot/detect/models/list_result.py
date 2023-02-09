@@ -1,7 +1,7 @@
 from typing import List
 
 from webspot.detect.models.stats import Stats
-from webspot.models.node import Node
+from webspot.graph.models.node import Node
 
 
 class ListResult(dict):

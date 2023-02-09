@@ -14,7 +14,7 @@ from scipy.stats import entropy
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import normalize
 
-from webspot.dataset.graph_loader import GraphLoader
+from webspot.graph.graph_loader import GraphLoader
 from webspot.detect.utils.highlight_html import highlight_html
 from webspot.detect.models.field import Field
 from webspot.detect.models.list_result import ListResult

@@ -20,6 +20,7 @@ export default {
     });
     const internalUrl = ref('');
     const onUrlChange = (value) => {
+      console.debug(value);
       internalUrl.value = value;
     };
     watch(() => props.url, () => internalUrl.value = props.url);
@@ -27,6 +28,7 @@ export default {
       // replace query string "url" with the value of internalUrl
       const url = new URL(window.location.href);
       url.searchParams.set('url', internalUrl.value);
+      console.debug(url.href);
 
       // navigate to the new url
       window.location.href = url.href;
@@ -39,7 +41,7 @@ export default {
     };
   },
   template: `
-<top-navbar :url="url"></top-navbar>
+<top-navbar :url="url" @url-change="onUrlChange" @submit="onSubmit"/>
 <div class="main-container">
   <template v-if="url">
     <nav-sidebar :results="results" @submit="onSubmit" @change="onUrlChange"/>

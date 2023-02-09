@@ -10,7 +10,7 @@ from sklearn.feature_extraction import DictVectorizer
 from sklearn.preprocessing import LabelEncoder
 from dgl import DGLGraph
 
-from webspot.models.node import Node
+from webspot.graph.models.node import Node
 
 
 class GraphLoader(object):

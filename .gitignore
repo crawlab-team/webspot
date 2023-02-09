@@ -136,3 +136,6 @@ _trial_temp
 .models
 tmp/
 node_modules/
+
+*.db
+*.db-journal

@@ -36,13 +36,13 @@ async def detect(request: Request):
         detector = PlainListDetector(url=request.query_params.get('url'))
         detector.run()
     except Exception as e:
-        traceback.print_exception(type(e), e, e.__traceback__)
-        err = ''.join(traceback.format_stack())
+        err_lines = traceback.format_exception(type(e), e, e.__traceback__)
+        err = ''.join(err_lines)
         logging.error(err)
         return templates.TemplateResponse('index.html', {
             'request': request,
             'url': request.query_params.get('url'),
-            'error': e.__traceback__,
+            'error': err,
         })
 
     # save to db

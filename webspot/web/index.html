@@ -19,6 +19,7 @@
     url: '{{ url }}',
     html: '{{ html }}',
     results: '{{ results }}',
+    error: `{{ error | safe }}`,
   })
   app.use(ElementPlus);
   for (const [key, component] of Object.entries(ElementPlusIconsVue)) {

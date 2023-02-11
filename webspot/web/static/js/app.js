@@ -13,6 +13,7 @@ export default {
     url: String,
     html: String,
     results: String,
+    error: String,
   },
   setup(props) {
     const htmlString = computed(() => {
@@ -35,11 +36,16 @@ export default {
       // navigate to the new url
       window.location.href = url.href;
     };
+    const formattedError = computed(() => {
+      if (!props.error) return '';
+      return props.error.split('\n').join('<br>');
+    });
     return {
       htmlString,
       internalUrl,
       onUrlChange,
       onSubmit,
+      formattedError,
     };
   },
   template: `
@@ -48,7 +54,11 @@ export default {
   <template v-if="url">
     <!--error-->
     <template v-if="error">
-      <el-empty style="width: 100%" :description="'Error occurred: ' + error" style="padding-bottom: 15%">
+      <el-result icon="error" style="width: 100%" title="An error occurred" sub-title="Please try again">
+        <template #extra>
+          <pre v-html="formattedError" style="text-align: left; color: var(--color-red); border: 1px solid var(--color-light-grey); padding: 10px; background: #ffffff"/>
+        </template>
+      </el-result>
     </template>
     <!--./error-->
 

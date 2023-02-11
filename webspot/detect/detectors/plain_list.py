@@ -3,6 +3,7 @@ import json
 import logging
 import os.path
 import time
+import traceback
 from typing import List, Set
 
 import html_to_json_enhanced
@@ -37,7 +38,7 @@ class PlainListDetector(object):
         embed_walk_length: int = 5,
         item_nodes_samples: int = 5,
         node2vec_ratio: float = 1.,
-        request_method: str = 'rod',
+        request_method: str = 'request',
         request_rod_url: str = 'http://localhost:7777/request',
     ):
         # settings
@@ -265,7 +266,7 @@ class PlainListDetector(object):
             self.results[i]['name'] = f'List {i + 1}'
 
     def _extract(self):
-        soup = BeautifulSoup(self._html)
+        soup = BeautifulSoup(self._html, features='lxml')
 
         for i, result in enumerate(self.results):
             # list node

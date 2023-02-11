@@ -1,4 +1,6 @@
+import logging
 import os.path
+import traceback
 
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
@@ -27,14 +29,21 @@ async def detect(request: Request):
     if url is None or url == '':
         return templates.TemplateResponse('index.html', {
             'request': request,
-            'url': '',
-            'html': '',
-            'results': '',
         })
 
-    # create a detector and run with url
-    detector = PlainListDetector(url=request.query_params.get('url'))
-    detector.run()
+    try:
+        # create and run a detector
+        detector = PlainListDetector(url=request.query_params.get('url'))
+        detector.run()
+    except Exception as e:
+        traceback.print_exception(type(e), e, e.__traceback__)
+        err = ''.join(traceback.format_stack())
+        logging.error(err)
+        return templates.TemplateResponse('index.html', {
+            'request': request,
+            'url': request.query_params.get('url'),
+            'error': e.__traceback__,
+        })
 
     # save to db
     session = get_session()

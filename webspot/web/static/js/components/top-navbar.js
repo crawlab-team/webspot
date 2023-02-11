@@ -7,7 +7,9 @@ export default {
   },
   setup(props, {emit}) {
     const internalUrl = ref(props.url);
-    watch(() => props.url, () => internalUrl.value = props.url);
+    watch(() => props.url, () => {
+      if (props.url) internalUrl.value = props.url;
+    });
     const onUrlChange = () => emit('url-change', internalUrl.value);
     watch(() => internalUrl.value, onUrlChange);
     const onSubmit = () => {

@@ -16,7 +16,60 @@ Webspot is a command line tool. It can be used to detect web content and extract
 
 ### Web UI
 
+#### Start
+
+Quick start by executing the command below.
+
 ```bash
 webspot web
 ```
 
+Then you can access the web UI at http://localhost:80.
+
+#### Options
+
+```bash
+webspot web --help
+```
+
+## Development
+
+Development with Webspot is easy. You can follow the following guidance to get started.
+
+### Pre-requisites
+
+- Python 3.8 or higher
+- Go 1.16 or higher
+
+### Install dependencies
+
+```bash
+# dependencies
+pip install -r requirements.txt
+```
+
+### Start web server
+
+```bash
+# start development server
+python main.py web
+```
+
+### Code Structure
+
+The core code is located in `webspot` directory. The `main.py` file is the entry point of the web server.
+
+```
+webspot
+├── cmd     # command line tools
+├── crawler # web crawler
+├── data    # data files (html, json, etc.)
+├── db      # database
+├── detect  # web content detection
+├── graph   # graph module
+├── models  # models
+├── request # request helper
+├── test    # test cases
+├── utils   # utilities
+└── web     # web server
+```

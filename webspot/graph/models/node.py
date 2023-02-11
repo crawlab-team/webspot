@@ -12,7 +12,14 @@ class Node(dict):
 
     @property
     def features(self) -> List[Tuple[str, str]]:
-        return self.get('features')
+        features = []
+        for k, v in self.get('features'):
+            # skip pseudo-classes
+            if k == 'class':
+                if ':' in v:
+                    continue
+            features.append((k, v))
+        return features
 
     @property
     def features_dict(self) -> Dict[str, int]:

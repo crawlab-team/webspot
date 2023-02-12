@@ -252,7 +252,9 @@ class PlainListDetector(object):
             try:
                 nodes_features_vec = self._get_nodes_features(nodes_idx)
                 nodes_features_vec_norm = normalize(nodes_features_vec.sum(axis=0).reshape(1, -1), norm='l1')
-                score = entropy(nodes_features_vec_norm, axis=1)[0]
+
+                # score
+                score = entropy(nodes_features_vec_norm, axis=1)[0] * len(result.item_nodes)
             except ValueError as e:
                 # logging.warning(f'ValueError: {e}')
                 score = 0

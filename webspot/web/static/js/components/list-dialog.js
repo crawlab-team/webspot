@@ -20,6 +20,7 @@ export default {
         return {
           key: f.name,
           label: f.name,
+          ...f,
         };
       });
     });
@@ -106,7 +107,22 @@ export default {
 
     <el-tab-pane label="Data" name="data">
       <el-table v-if="result" :data="result.extract_rules_css.data" :cell-style="{padding: '5px 10px'}" border>
-        <el-table-column v-for="column in columns" :key="column.key" :prop="column.key" :label="column.label"/>
+        <el-table-column v-for="column in columns" :key="column.key" :prop="column.key" :label="column.label">
+          <template #default="scope">
+            <template v-if="column.type === 'text'">
+              {{ scope.row[column.key] }}
+            </template>
+            <template v-else-if="column.type === 'link_url'">
+              <a :href="scope.row[column.key]" target="_blank">{{ scope.row[column.key] }}</a>
+            </template>
+            <template v-else-if="column.type === 'image_url'">
+              <img :src="scope.row[column.key]" style="max-width: 100px; max-height: 100px;" />
+            </template>
+            <template v-else>
+              {{ scope.row[column.key] }}
+            </template>
+          </template>
+        </el-table-column>
       </el-table>
     </el-tab-pane>
   </el-tabs>

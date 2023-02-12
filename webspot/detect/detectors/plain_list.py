@@ -5,6 +5,7 @@ import os.path
 import time
 import traceback
 from typing import List, Set
+from urllib.parse import urljoin
 
 import html_to_json_enhanced
 import numpy as np
@@ -227,14 +228,21 @@ class PlainListDetector(object):
             }))
         return fields
 
-    @staticmethod
-    def _extract_data(soup: BeautifulSoup, items_selector_full: str, fields: List[Field]):
+    def _extract_data(self, soup: BeautifulSoup, items_selector_full: str, fields: List[Field]):
         data = []
         for item_el in soup.select(items_selector_full):
             row = {}
             for f in fields:
                 try:
-                    row[f.name] = item_el.select_one(f.selector).text.strip()
+                    field_el = item_el.select_one(f.selector)
+                    if f.type == FIELD_EXTRACT_RULE_TYPE_TEXT:
+                        row[f.name] = field_el.text.strip()
+                    elif f.type == FIELD_EXTRACT_RULE_TYPE_LINK_URL:
+                        row[f.name] = urljoin(self.url, field_el.attrs.get(f.attribute))
+                    elif f.type == FIELD_EXTRACT_RULE_TYPE_IMAGE_URL:
+                        row[f.name] = urljoin(self.url, field_el.attrs.get(f.attribute))
+                    else:
+                        continue
                 except Exception as e:
                     # logging.warning(e)
                     continue

@@ -9,17 +9,18 @@ export default {
     NavSidebar,
     PreviewContainer,
   },
-  props: {
-    url: String,
-    html: String,
-    results: String,
-    error: String,
-  },
   setup(props) {
+    const url = ref('');
+    const results = ref('');
+    const html = ref('');
+    const error = ref('');
+
     const htmlString = computed(() => {
       return atob(props.html);
     });
+
     const internalUrl = ref('');
+
     const onUrlChange = (value) => {
       internalUrl.value = value;
     };
@@ -27,7 +28,9 @@ export default {
     onBeforeMount(() => {
       const url = new URL(window.location.href);
       internalUrl.value = url.searchParams.get('url');
+      console.debug(props.results);
     });
+
     const onSubmit = () => {
       // replace query string "url" with the value of internalUrl
       const url = new URL(window.location.href);
@@ -36,11 +39,17 @@ export default {
       // navigate to the new url
       window.location.href = url.href;
     };
+
     const formattedError = computed(() => {
       if (!props.error) return '';
       return props.error.split('\n').join('<br>');
     });
+
     return {
+      url,
+      results,
+      html,
+      error,
       htmlString,
       internalUrl,
       onUrlChange,

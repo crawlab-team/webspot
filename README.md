@@ -38,7 +38,7 @@ Development with Webspot is easy. You can follow the following guidance to get s
 
 ### Pre-requisites
 
-- Python 3.8 or higher
+- Python >=3.8 and <=3.10
 - Go 1.16 or higher
 
 ### Install dependencies

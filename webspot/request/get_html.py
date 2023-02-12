@@ -17,9 +17,11 @@ def get_html(url: str, request_method: str, request_rod_url: str = DEFAULT_REQUE
             headers={'Content-Type': 'application/json'},
         )
         _html = json.loads(res.content.decode('utf-8')).get('html')
-    else:
+    elif request_method == 'request':
         res = requests.get(url)
         _html = res.content.decode('utf-8')
+    else:
+        raise Exception(f'Invalid request method: {request_method}')
 
     if save:
         # domain

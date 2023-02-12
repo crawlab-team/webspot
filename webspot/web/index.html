@@ -15,15 +15,10 @@
   import App from './static/js/app.js';
 
   const {createApp} = Vue;
-  const app = createApp(App, {
-    url: '{{ url }}',
-    html: '{{ html }}',
-    results: '{{ results }}',
-    error: `{{ error | safe }}`,
-  })
+  const app = createApp(App);
   app.use(ElementPlus);
   for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-    app.component(key, component)
+    app.component(key, component);
   }
   app.mount('#app');
 </script>

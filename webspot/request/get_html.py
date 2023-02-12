@@ -9,11 +9,12 @@ DEFAULT_REQUEST_ROD_URL = 'http://localhost:7777/request'
 DEFAULT_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data'))
 
 
-def get_html(url: str, request_method: str, request_rod_url: str = DEFAULT_REQUEST_ROD_URL, save: bool = False) -> str:
+def get_html(url: str, request_method: str, request_rod_url: str = DEFAULT_REQUEST_ROD_URL,
+             request_rod_duration: int = 1, save: bool = False) -> str:
     if request_method == 'rod':
         res = requests.post(
             request_rod_url,
-            data=json.dumps({'url': url}),
+            data=json.dumps({'url': url, 'duration': request_rod_duration}),
             headers={'Content-Type': 'application/json'},
         )
         _html = json.loads(res.content.decode('utf-8')).get('html')

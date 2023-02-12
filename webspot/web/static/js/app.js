@@ -19,26 +19,24 @@ export default {
       return atob(props.html);
     });
 
-    const internalUrl = ref('');
-
     const onUrlChange = (value) => {
-      internalUrl.value = value;
+      url.value = value;
     };
-    watch(() => props.url, () => internalUrl.value = props.url);
-    onBeforeMount(() => {
-      const url = new URL(window.location.href);
-      internalUrl.value = url.searchParams.get('url');
-      console.debug(props.results);
+
+    const onSubmit = async () => {
+      const res = await axios.post(`/detect`, {url: url.value});
+      results.value = res.data.results;
+      html.value = res.data.html;
+      error.value = res.data.error;
+    };
+
+    onBeforeMount(async () => {
+      const urlParam = new URL(window.location.href).searchParams.get('url');
+      if (urlParam) {
+        url.value = urlParam;
+        await onSubmit();
+      }
     });
-
-    const onSubmit = () => {
-      // replace query string "url" with the value of internalUrl
-      const url = new URL(window.location.href);
-      url.searchParams.set('url', internalUrl.value);
-
-      // navigate to the new url
-      window.location.href = url.href;
-    };
 
     const formattedError = computed(() => {
       if (!props.error) return '';
@@ -51,7 +49,6 @@ export default {
       html,
       error,
       htmlString,
-      internalUrl,
       onUrlChange,
       onSubmit,
       formattedError,
@@ -72,7 +69,7 @@ export default {
     <!--./error-->
 
     <!--results-->
-    <template v-else>
+    <template v-else-if="results && html">
       <nav-sidebar :results="results" @submit="onSubmit" @change="onUrlChange"/>
       <preview-container :html="html"/>
     </template>
@@ -83,7 +80,7 @@ export default {
   <template v-else>
     <el-empty style="width: 100%" description="Please enter the URL to start" style="padding-bottom: 15%">
       <div class="url-wrapper" style="display: flex; width: 640px;">
-        <el-input v-model="internalUrl" placeholder="Please enter the URL" @keyup.enter="onSubmit"/>
+        <el-input v-model="url" placeholder="Please enter the URL" @keyup.enter="onSubmit"/>
         <el-button type="primary" @click="onSubmit" style="margin-left: 5px">Submit</el-button>
       </div>
     </el-empty>

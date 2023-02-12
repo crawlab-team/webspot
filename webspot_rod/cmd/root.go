@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-var requestUrl string
-
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&requestUrl, "url", "u", "", "URL to request")
 }

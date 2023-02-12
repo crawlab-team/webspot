@@ -15,7 +15,7 @@ async def detect(payload: dict):
     url = payload.get('url')
     if url is None or url == '':
         raise HTTPException(status_code=400, detail='url is required')
-    method = payload.get('method')
+    method = payload.get('method') or 'request'
 
     try:
         # create and run a detector

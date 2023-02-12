@@ -1,17 +1,14 @@
+import asyncio
 import logging
 import os
 import traceback
 
-from sqlalchemy import select, insert
-from sqlalchemy.exc import NoResultFound
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 
-from webspot.db.session import get_session
 from webspot.detect.detectors.plain_list import PlainListDetector
-from webspot.models.page import PageModel
-from webspot.models.request import RequestModel
 from webspot.web.app import app, templates
+from webspot.web.utils.db import save_page_request
 
 
 @app.get('/', response_class=HTMLResponse)
@@ -40,19 +37,7 @@ async def detect(request: Request):
         })
 
     # save to db
-    session = get_session()
-    try:
-        p = session.scalars(select(PageModel).where(PageModel.url == url)).one()
-    except NoResultFound:
-        p = session.execute(insert(PageModel).values(url=url).returning(PageModel)).scalar()
-    except Exception as e:
-        raise e
-    session.execute(insert(RequestModel).values(
-        page_id=p.id,
-        html=detector.html_base64,
-        results=detector.results_base64,
-    ))
-    session.commit()
+    asyncio.ensure_future(save_page_request(detector, url))
 
     return templates.TemplateResponse('index.html', {
         'request': request,

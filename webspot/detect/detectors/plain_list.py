@@ -14,6 +14,8 @@ from scipy.stats import entropy, norm
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import normalize
 
+from webspot.constants.field_extract_rule_type import FIELD_EXTRACT_RULE_TYPE_TEXT, FIELD_EXTRACT_RULE_TYPE_LINK_URL, \
+    FIELD_EXTRACT_RULE_TYPE_IMAGE_URL
 from webspot.detect.utils.math import sigmoid, log_positive
 from webspot.detect.utils.node import get_node_inner_text
 from webspot.graph.graph_loader import GraphLoader
@@ -176,23 +178,52 @@ class PlainListDetector(object):
         )
 
     def _extract_fields_by_id(self, list_id: int) -> List[Field]:
+        # fields
         fields: List[Field] = []
-        fields_extract_rules_set: Set[str] = set()
+
+        # extract rules set (css selector path, type, attribute)
+        fields_extract_rules_set: Set[(str, str)] = set()
+
+        # list child nodes
         list_child_nodes = self.graph_loader.get_node_children_by_id(list_id)
+
+        # iterate list child nodes
         for i, c in enumerate(list_child_nodes):
+            # stop if item nodes samples reached
             if i == self.item_nodes_samples:
                 break
+
+            # item child nodes
             item_child_nodes = self.graph_loader.get_node_children_recursive_by_id(c.id)
+
+            # iterate item child nodes
             for n in item_child_nodes:
+                # extract text
                 if n.text is not None and n.text.strip() != '':
                     extract_rule_css = self.graph_loader.get_node_css_selector_path(node=n, root_id=list_id,
                                                                                     numbered=False)
-                    fields_extract_rules_set.add(extract_rule_css)
+                    fields_extract_rules_set.add((extract_rule_css, FIELD_EXTRACT_RULE_TYPE_TEXT, ''))
 
-        for i, extract_rule_css in enumerate(fields_extract_rules_set):
+                # extract link
+                if n.tag == 'a' and n.attrs.get('href') is not None:
+                    extract_rule_css = self.graph_loader.get_node_css_selector_path(node=n, root_id=list_id,
+                                                                                    numbered=False)
+                    fields_extract_rules_set.add((extract_rule_css, FIELD_EXTRACT_RULE_TYPE_LINK_URL, 'href'))
+
+                # extract image url
+                if n.tag == 'img' and n.attrs.get('src') is not None:
+                    extract_rule_css = self.graph_loader.get_node_css_selector_path(node=n, root_id=list_id,
+                                                                                    numbered=False)
+                    fields_extract_rules_set.add((extract_rule_css, FIELD_EXTRACT_RULE_TYPE_IMAGE_URL, 'src'))
+
+        for i, item in enumerate(fields_extract_rules_set):
+            extract_rule_css, type_, attribute = item
+            name = f'Field_{type_}_{i + 1}'
             fields.append(Field({
-                'name': f'Field {i + 1}',
+                'name': name,
                 'selector': extract_rule_css,
+                'type': type_,
+                'attribute': attribute,
             }))
         return fields
 

@@ -1,6 +1,6 @@
 import ListDialog from './list-dialog.js';
 
-const {ref, computed} = Vue;
+const {ref, computed, onBeforeMount} = Vue;
 
 export default {
   name: 'NavSidebar',
@@ -33,6 +33,10 @@ export default {
 
     const activeResult = ref({});
 
+    onBeforeMount(() => {
+      console.debug(resultsArray.value);
+    });
+
     return {
       resultsArray,
       isCollapse,
@@ -47,10 +51,13 @@ export default {
   <el-menu :collapse="isCollapse" style="height: 100%">
     <el-menu-item v-for="(result, $index) in resultsArray" :key="$index" :index="$index" @click="() => onClickList(result)">
       <el-icon>
-        <i class="fa fa-list"></i>
+        <i class="fa fa-circle-o"></i>
       </el-icon>
       <span>{{ result.name }}</span>
-      <el-tag type="primary" style="margin-left: 10px;">{{ result.stats.score.toFixed(2) }}</el-tag>
+      <el-tag type="primary" style="margin-left: 10px;">
+        <span class="score">{{ result.stats.score.toFixed(2) }}</span>
+        <span class="count"> ({{ result.nodes.items.length }})</span>
+      </el-tag>
     </el-menu-item>
     <el-menu-item style="border-top: 1px solid #CCCCCC; position: absolute; bottom: 0; width: 100%" @click="onToggle">
       <el-icon>

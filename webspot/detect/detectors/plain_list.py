@@ -9,12 +9,13 @@ from typing import List, Set
 import html_to_json_enhanced
 import numpy as np
 import pandas as pd
-import requests
 from bs4 import BeautifulSoup
-from scipy.stats import entropy
+from scipy.stats import entropy, norm
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import normalize
 
+from webspot.detect.utils.math import sigmoid, log_positive
+from webspot.detect.utils.node import get_node_inner_text
 from webspot.graph.graph_loader import GraphLoader
 from webspot.detect.utils.highlight_html import highlight_html
 from webspot.detect.models.field import Field
@@ -35,11 +36,14 @@ class PlainListDetector(object):
         dbscan_min_samples: int = 3,
         dbscan_metric: str = 'euclidean',
         entropy_threshold: float = 1e-3,
+        score_threshold: float = 1.,
         embed_walk_length: int = 5,
         item_nodes_samples: int = 5,
         node2vec_ratio: float = 1.,
         request_method: str = 'request',
         request_rod_url: str = 'http://localhost:7777/request',
+        request_rod_duration: int = 3,
+        text_length_discount: float = 1e-2,
     ):
         # settings
         self.url = url
@@ -47,10 +51,13 @@ class PlainListDetector(object):
         self.json_path = json_path
         self.html_path = html_path
         self.entropy_threshold = entropy_threshold
+        self.score_threshold = score_threshold
         self.item_nodes_samples = item_nodes_samples
         self.node2vec_ratio = node2vec_ratio
         self.request_method = request_method
         self.request_rod_url = request_rod_url
+        self.request_rod_duration = request_rod_duration
+        self.text_length_discount = text_length_discount
 
         # validate
         if not self.url:
@@ -112,7 +119,12 @@ class PlainListDetector(object):
         return base64.b64encode(json.dumps(self.results).encode('utf-8')).decode('utf-8')
 
     def _request(self):
-        self._html = get_html(self.url, self.request_method, self.request_rod_url)
+        self._html = get_html(
+            url=self.url,
+            request_method=self.request_method,
+            request_rod_url=self.request_rod_url,
+            request_rod_duration=self.request_rod_duration,
+        )
         self.json_data = html_to_json_enhanced.convert(self._html, with_id=True)
 
     def _get_nodes_features_tags_attrs(self, nodes_idx: np.ndarray = None):
@@ -201,7 +213,7 @@ class PlainListDetector(object):
     def _train(self):
         self.dbscan.fit(self._get_nodes_features())
 
-    def _filter(self):
+    def _pre_filter(self):
         df_nodes = pd.DataFrame({
             'id': [n.id for n in self.graph_loader.nodes_],
             'parent_id': [n.parent_id for n in self.graph_loader.nodes_],
@@ -244,23 +256,40 @@ class PlainListDetector(object):
                 }),
             )
 
-    def _sort(self):
+    def _filter(self):
         for i, result in enumerate(self.results):
             nodes_ids = np.array([n.id for n in result.item_nodes])
             nodes_idx = np.argwhere(np.isin(self.graph_loader.nodes_ids, nodes_ids))
 
+            score = 0
+            scores = {}
             try:
                 nodes_features_vec = self._get_nodes_features(nodes_idx)
                 nodes_features_vec_norm = normalize(nodes_features_vec.sum(axis=0).reshape(1, -1), norm='l1')
 
                 # score
-                score = entropy(nodes_features_vec_norm, axis=1)[0] * len(result.item_nodes)
+                score_text_richness = log_positive(
+                    np.array([(len(get_node_inner_text(self.graph_loader, n)) * self.text_length_discount)
+                              for n in result.item_nodes]).sum())
+                score_complexity = float(entropy(nodes_features_vec_norm, axis=1)[0])
+                score_item_count = log_positive(len(result.item_nodes))
+                score = score_text_richness * score_complexity * score_item_count
+                scores = {
+                    'text_richness': score_text_richness,
+                    'complexity': score_complexity,
+                    'item_count': score_item_count,
+                }
+
             except ValueError as e:
                 # logging.warning(f'ValueError: {e}')
-                score = 0
+                pass
 
             self.results[i]['stats']['score'] = float(score)
+            self.results[i]['stats']['scores'] = scores
 
+        self.results = [r for r in self.results if r.stats.score > self.score_threshold]
+
+    def _sort(self):
         self.results = sorted(self.results, key=lambda x: x.stats.score, reverse=True)
 
         # assign name
@@ -312,6 +341,9 @@ class PlainListDetector(object):
 
         # train clustering model
         self._train()
+
+        # pre-filter nodes
+        self._pre_filter()
 
         # filter nodes
         self._filter()

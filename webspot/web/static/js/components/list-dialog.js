@@ -52,7 +52,30 @@ export default {
     <el-tab-pane label="Overview" name="overview">
       <el-form v-if="result" label-width="180px">
         <el-form-item label="Score">
-            <el-tag type="primary">{{ result.stats.score.toFixed(2) }}</el-tag>
+          <el-tooltip content="Score (Overall)">
+            <el-tag type="primary" style="margin-right: 5px">
+              <i class="fa fa-star"></i>
+              {{ result.stats.score.toFixed(2) }}
+            </el-tag>
+          </el-tooltip>
+          <el-tooltip content="Sub-Score (Text Richness)">
+            <el-tag type="info" style="margin-right: 5px">
+              <i class="fa fa-font"></i>
+              {{ result.stats.scores.text_richness.toFixed(2) }}
+            </el-tag>
+          </el-tooltip>
+          <el-tooltip content="Sub-Score (Complexity)">
+            <el-tag type="info" style="margin-right: 5px">
+              <i class="fa fa-code-fork"></i>
+              {{ result.stats.scores.complexity.toFixed(2) }}
+            </el-tag>
+          </el-tooltip>
+          <el-tooltip content="Sub-Score (Item Count)">
+            <el-tag type="info" style="margin-right: 5px">
+              <i class="fa fa-list"></i>
+              {{ result.stats.scores.item_count.toFixed(2) }}
+            </el-tag>
+          </el-tooltip>
         </el-form-item>
         <el-form-item label="Selector Type">
           <el-radio-group v-model="selectorType">

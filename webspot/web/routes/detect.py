@@ -15,13 +15,13 @@ async def detect(payload: dict):
     url = payload.get('url')
     if url is None or url == '':
         raise HTTPException(status_code=400, detail='url is required')
-    method = payload.get('method') or 'request'
+    method = payload.get('method') or os.environ.get('WEBSPOT_REQUEST_METHOD') or 'request'
 
     try:
         # create and run a detector
         detector = PlainListDetector(
             url=url,
-            request_method=method or os.environ.get('WEBSPOT_REQUEST_METHOD'),
+            request_method=method,
         )
         detector.run()
     except Exception as e:

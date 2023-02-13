@@ -94,8 +94,8 @@ export default {
       <el-skeleton style="padding-top: 2%;" animated :throttle="500">
         <template #template>
           <div style="display: flex;">
-            <el-skeleton style="width: 240px; margin-left: 5%;" :rows="30" />
-            <el-skeleton style="flex: 1; margin: 0 10%;" :rows="30" />
+            <el-skeleton style="width: 240px; margin-left: 2%;" :rows="25" />
+            <el-skeleton style="flex: 1; margin: 0 10%;" :rows="25" />
           </div>
         </template>
       </el-skeleton>

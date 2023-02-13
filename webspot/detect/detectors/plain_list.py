@@ -3,7 +3,6 @@ import json
 import logging
 import os.path
 import time
-import traceback
 from typing import List, Set
 
 import html_to_json_enhanced

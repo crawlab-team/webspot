@@ -2,7 +2,9 @@ name: "Docker Image CI: websplot"
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - develop
 
 env:
   IMAGE_NAME: crawlabteam/webspot

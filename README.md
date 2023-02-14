@@ -45,7 +45,7 @@ graph LR
     d[Detector]
     r[Results]
 
-    hr --"html"--> gl --"graph"--> d --"output"--> r
+    hr --"html + json"--> gl --"graph"--> d --"output"--> r
 ```
 
 ## Development

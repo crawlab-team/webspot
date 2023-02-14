@@ -6,7 +6,9 @@ import traceback
 from fastapi import Request, HTTPException
 
 from webspot.detect.detectors.plain_list import PlainListDetector
-from webspot.web.app import app, templates
+from webspot.graph.graph_loader import GraphLoader
+from webspot.request.html_requester import HtmlRequester
+from webspot.web.app import app
 from webspot.web.utils.db import save_page_request
 
 
@@ -18,10 +20,24 @@ async def detect(payload: dict):
     method = payload.get('method') or os.environ.get('WEBSPOT_REQUEST_METHOD') or 'request'
 
     try:
-        # create and run a detector
-        detector = PlainListDetector(
+        # html requester
+        html_requester = HtmlRequester(
             url=url,
             request_method=method,
+        )
+        html_requester.run()
+
+        # graph loader
+        graph_loader = GraphLoader(
+            html=html_requester.html,
+            json_data=html_requester.json_data,
+        )
+        graph_loader.run()
+
+        # detector
+        detector = PlainListDetector(
+            graph_loader=graph_loader,
+            html_requester=html_requester,
         )
         detector.run()
     except Exception as e:

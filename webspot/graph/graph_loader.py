@@ -2,6 +2,7 @@ import json
 from typing import List, Tuple, Dict, Union
 
 import dgl
+import html_to_json_enhanced
 import networkx as nx
 import numpy as np
 import torch
@@ -14,12 +15,14 @@ from webspot.graph.models.node import Node
 
 
 class GraphLoader(object):
-    def __init__(self, json_data: str = None, json_path: str = None, file_pattern: str = None, body_only: bool = True,
-                 embed_walk_length: int = 3):
+    def __init__(
+        self,
+        html: str,
+        json_data: dict,
+        body_only: bool = True,
+        embed_walk_length: int = 3,
+    ):
         # settings
-        self.json_data = json_data
-        self.json_path = json_path
-        self.file_pattern = file_pattern or r'\.json$'
         self.body_only = body_only
         self.embed_walk_length = embed_walk_length
         self.available_feature_keys = [
@@ -27,9 +30,10 @@ class GraphLoader(object):
             'id',
             'class',
         ]
-        assert self.json_data or self.json_path, 'json_data or json_path must be provided'
 
         # data
+        self.html = html
+        self.json_data = json_data
         self.root_node_json: dict = {}
         self.nodes_: List[Node] = []
         self.nodes_ids: List[int] = []
@@ -69,10 +73,8 @@ class GraphLoader(object):
 
     def load_graph_data(self):
         # get list data and root node
-        if self.json_data is not None:
-            list_data, self.root_node_json = self.get_nodes_json_data(self.json_data)
-        else:
-            list_data, self.root_node_json = self.get_nodes_json_data_by_filename(self.json_path)
+        self.json_data = html_to_json_enhanced.convert_html.convert(self.html, with_id=True)
+        list_data, self.root_node_json = self.get_nodes_json_data(self.json_data)
 
         # load graph data
         self._load_graph_data(list_data)
@@ -350,9 +352,3 @@ class GraphLoader(object):
             node = parent
 
         return ' > '.join(path)
-
-
-if __name__ == '__main__':
-    data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/quotes.toscrape.com/json/http___quotes_toscrape_com_.json'
-    loader = GraphLoader(json_path=data_path)
-    loader.run()

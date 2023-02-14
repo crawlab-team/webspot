@@ -17,17 +17,18 @@ export default {
     const columns = computed(() => {
       if (!props.result) return [];
       return props.result.extract_rules_css.fields.map(f => {
-        const {data} = props.result.extract_rules_css
+        const {data} = props.result.extract_rules_css;
+        console.debug(data);
         // get all the data for each column
-        const arr = data.map(d => d[f.name]).filter(d => d!==undefined)
+        const arr = data.map(d => d[f.name]).filter(d => d !== undefined);
         // add the label of each column
-        arr.push(f.name)
-        f.width = getMaxLength(arr) + 60
+        arr.push(f.name);
+        f.width = getMaxLength(arr) + 60;
         return {
+          ...f,
           key: f.name,
           label: f.name,
           width: f.width,
-          ...f,
         };
       });
     });
@@ -45,17 +46,17 @@ export default {
       await ElMessage({message: 'Copied to clipboard', duration: 1000});
     };
 
-    const getMaxLength =  (arr) => {
+    const getMaxLength = (arr) => {
       return arr.reduce((acc, item) => {
         if (item) {
-          let calcLen = getTextWidth(item)
+          let calcLen = getTextWidth(item);
           if (acc < calcLen) {
-            acc = calcLen
+            acc = calcLen;
           }
         }
-        return acc
-      }, 0)
-    }
+        return acc;
+      }, 0);
+    };
 
     // use the span tag to wrap the content and then calculate the width of the span
     const getTextWidth = (str) => {
@@ -67,7 +68,7 @@ export default {
       width = document.querySelector('.getTextWidth').offsetWidth;
       document.querySelector('.getTextWidth').remove();
       return width;
-    }
+    };
 
     return {
       dialogVisible,
@@ -140,7 +141,13 @@ export default {
 
     <el-tab-pane label="Data" name="data">
       <el-table v-if="result" :data="result.extract_rules_css.data" :cell-style="{padding: '5px 10px'}" border>
-        <el-table-column v-for="column in columns" :key="column.key" :prop="column.key" :label="column.label">
+        <el-table-column
+          v-for="column in columns"
+          :key="column.key"
+          :prop="column.key"
+          :label="column.label"
+          :width="column.width"
+        >
           <template #default="scope">
             <template v-if="column.type === 'text'">
               {{ scope.row[column.key] }}
@@ -156,7 +163,6 @@ export default {
             </template>
           </template>
         </el-table-column>
-        <el-table-column v-for="column in columns" :key="column.key" :prop="column.key" :label="column.label" :width="column.width" align="center" />
       </el-table>
     </el-tab-pane>
   </el-tabs>

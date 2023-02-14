@@ -1,101 +1,56 @@
 import base64
 import json
 import logging
-import os.path
 import time
 from typing import List, Set
 from urllib.parse import urljoin
 
-import html_to_json_enhanced
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
-from scipy.stats import entropy, norm
+from scipy.stats import entropy
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import normalize
 
 from webspot.constants.field_extract_rule_type import FIELD_EXTRACT_RULE_TYPE_TEXT, FIELD_EXTRACT_RULE_TYPE_LINK_URL, \
     FIELD_EXTRACT_RULE_TYPE_IMAGE_URL
-from webspot.detect.utils.math import sigmoid, log_positive
+from webspot.detect.utils.math import log_positive
 from webspot.detect.utils.node import get_node_inner_text
 from webspot.graph.graph_loader import GraphLoader
 from webspot.detect.utils.highlight_html import highlight_html
 from webspot.detect.models.field import Field
 from webspot.detect.models.list_result import ListResult
-from webspot.detect.utils.transform_html_links import transform_html_links
-from webspot.request.get_html import get_html
+from webspot.request.html_requester import HtmlRequester
 
 
 class PlainListDetector(object):
     def __init__(
         self,
-        url: str = None,
-        json_data: str = None,
-        json_path: str = None,
-        html_path: str = None,
-        save_path: str = None,
+        graph_loader: GraphLoader,
+        html_requester: HtmlRequester,
         dbscan_eps: float = 0.5,
         dbscan_min_samples: int = 3,
         dbscan_metric: str = 'euclidean',
         entropy_threshold: float = 1e-3,
         score_threshold: float = 1.,
-        embed_walk_length: int = 5,
         item_nodes_samples: int = 5,
         node2vec_ratio: float = 1.,
-        request_method: str = 'request',
-        request_rod_url: str = 'http://localhost:7777/request',
-        request_rod_duration: int = 3,
         text_length_discount: float = 1e-2,
     ):
         # settings
-        self.url = url
-        self.json_data = json_data
-        self.json_path = json_path
-        self.html_path = html_path
         self.entropy_threshold = entropy_threshold
         self.score_threshold = score_threshold
         self.item_nodes_samples = item_nodes_samples
         self.node2vec_ratio = node2vec_ratio
-        self.request_method = request_method
-        self.request_rod_url = request_rod_url
-        self.request_rod_duration = request_rod_duration
         self.text_length_discount = text_length_discount
 
-        # validate
-        if not self.url:
-            if self.json_path:
-                assert self.html_path, 'html_path is required if json_path is provided and url is not provided'
-            else:
-                assert self.json_data, 'json_data is required if json_path is not provided and url is not provided'
-
-        # save path
-        self.save_path = save_path
-        if not self.save_path:
-            if self.url:
-                self.save_path = os.path.abspath(
-                    os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'detect', 'plain_list',
-                                 self.url.replace('/', '_').replace(':', '_').replace('.', '_') + '.json'))
-            elif self.json_path:
-                self.save_path = os.path.abspath(
-                    os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'detect', 'plain_list',
-                                 self.json_path.split('/')[-1]))
-
-        # data
-        self._html = None
-
-        # request html page if url exists
-        if self.url:
-            self._request()
-        else:
-            with open(self.html_path, 'r') as f:
-                self._html = f.read()
-
         # graph loader
-        self.graph_loader = GraphLoader(json_data=self.json_data, json_path=self.json_path,
-                                        embed_walk_length=embed_walk_length)
-        self.graph_loader.run()
+        self.graph_loader = graph_loader
 
-        # dbscan clustering model
+        # html requester
+        self.html_requester = html_requester
+
+        # dbscan model
         self.dbscan = DBSCAN(
             metric=dbscan_metric,
             eps=dbscan_eps,
@@ -106,11 +61,16 @@ class PlainListDetector(object):
         self.results: List[ListResult] = []
 
     @property
+    def _html(self):
+        return self.graph_loader.html
+
+    @property
+    def url(self):
+        return self.html_requester.url
+
+    @property
     def html(self):
-        html = self._html
-        html = transform_html_links(html, self.url)
-        html = highlight_html(html, self.results)
-        return html
+        return highlight_html(self._html, self.results)
 
     @property
     def html_base64(self):
@@ -119,15 +79,6 @@ class PlainListDetector(object):
     @property
     def results_base64(self):
         return base64.b64encode(json.dumps(self.results).encode('utf-8')).decode('utf-8')
-
-    def _request(self):
-        self._html = get_html(
-            url=self.url,
-            request_method=self.request_method,
-            request_rod_url=self.request_rod_url,
-            request_rod_duration=self.request_rod_duration,
-        )
-        self.json_data = html_to_json_enhanced.convert(self._html, with_id=True)
 
     def _get_nodes_features_tags_attrs(self, nodes_idx: np.ndarray = None):
         """
@@ -367,13 +318,6 @@ class PlainListDetector(object):
                 'data': data,
             }
 
-    def _save(self):
-        if not os.path.exists(os.path.dirname(self.save_path)):
-            os.makedirs(os.path.dirname(self.save_path))
-
-        with open(self.save_path, 'w') as f:
-            f.write(json.dumps(self.results, indent=2))
-
     def run(self):
         tic = time.time()
 
@@ -392,33 +336,7 @@ class PlainListDetector(object):
         # extract fields into results
         self._extract()
 
-        # save results
-        self._save()
-
         toc = time.time()
         logging.info(f'PlainListExtractor: {toc - tic:.2f}s')
 
         return self.results
-
-
-if __name__ == '__main__':
-    data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/quotes.toscrape.com/json/http___quotes_toscrape_com_.json'
-    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/github.com/json/https___github_com_trending.json'
-    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/news.ycombinator.com/json/https___news_ycombinator_com.json'
-    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/www.ruanyifeng.com/json/http___www_ruanyifeng_com_blog_.json'
-    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/www.producthunt.com/json/https___www_producthunt_com.json'
-    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/edition.cnn.com/json/https___edition_cnn_com.json'
-    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/shixian.com/json/https___shixian_com_jobs_part-time.json'
-    # data_path = '/Users/marvzhang/projects/tikazyq/auto-html/data/github.com/json/https___github_com_search?q=crawlab.json'
-    # detector = PlainListDetector(json_path=data_path)
-
-    # url = 'https://quotes.toscrape.com/'
-    # url = 'https://cuiqingcai.com/'
-    url = 'https://cuiqingcai.com/archives/'
-    detector = PlainListDetector(url=url)
-
-    detector.run()
-
-    for result in detector.results:
-        print(result.extract_rules)
-        # n = detector.graph_loader.get_node_by_id(result.list_node.id)

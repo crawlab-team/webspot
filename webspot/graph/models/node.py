@@ -50,3 +50,11 @@ class Node(dict):
     @property
     def text(self) -> str:
         return self.get('text')
+
+    @property
+    def tag(self):
+        return self.feature_tag
+
+    @property
+    def attrs(self):
+        return {k: v for k, v in self.features if k != 'tag'}

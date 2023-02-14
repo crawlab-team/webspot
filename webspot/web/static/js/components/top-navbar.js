@@ -4,6 +4,7 @@ export default {
   name: 'TopNavbar',
   props: {
     url: String,
+    isLoading: Boolean,
   },
   setup(props, {emit}) {
     const internalUrl = ref(props.url);
@@ -27,7 +28,7 @@ export default {
   </div>
   <div class="url-wrapper" style="display: flex; flex: 0 0 360px;">
     <el-input id="url" type="text" placeholder="Please enter the URL" v-model="internalUrl" @keyup.enter="onSubmit"/>
-    <el-button type="primary" @click="onSubmit" style="margin-left: 5px">Submit</el-button>
+    <el-button type="primary" @click="onSubmit" style="margin-left: 5px" :loading="isLoading">Submit</el-button>
   </div>
 </div>`
 };

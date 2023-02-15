@@ -20,7 +20,7 @@ class GraphLoader(object):
         html: str,
         json_data: dict,
         body_only: bool = True,
-        embed_walk_length: int = 3,
+        embed_walk_length: int = 8,
     ):
         # settings
         self.body_only = body_only
@@ -113,6 +113,8 @@ class GraphLoader(object):
 
             # add to all node features
             self.nodes_features.append(node.features_dict)
+            # self.nodes_features.append({k: v for k, v in node.features_dict.items()
+            #                             if k.split('=')[0] in self.available_feature_keys})
 
     def _get_node(self, node_json_data: dict) -> Node:
         node_id = node_json_data.get('_id')

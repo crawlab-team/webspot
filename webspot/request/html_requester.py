@@ -5,7 +5,9 @@ from urllib.parse import urlparse
 
 import html_to_json_enhanced
 import requests
+from requests import Response
 
+from webspot.constants.html_request_method import HTML_REQUEST_METHOD_ROD, HTML_REQUEST_METHOD_REQUEST
 from webspot.detect.utils.transform_html_links import transform_html_links
 
 DEFAULT_REQUEST_ROD_URL = 'http://localhost:7777/request'
@@ -17,9 +19,10 @@ class HtmlRequester(object):
         self,
         url: str = None,
         html_path: str = None,
-        request_method: str = 'request',
-        request_rod_url: str = 'http://localhost:7777/request',
+        request_method: str = HTML_REQUEST_METHOD_REQUEST,
+        request_rod_url: str = DEFAULT_REQUEST_ROD_URL,
         request_rod_duration: int = 3,
+        save: bool = False,
     ):
         # settings
         self.url = url
@@ -27,33 +30,47 @@ class HtmlRequester(object):
         self.request_method = request_method
         self.request_rod_url = request_rod_url
         self.request_rod_duration = request_rod_duration
+        self.save = save
 
         # data
         self.html_: Union[str, None] = None
+        self.html_response: Union[Response, None] = None
         self.json_data: Union[dict, None] = None
 
-    @staticmethod
-    def _get_html(url: str, request_method: str, request_rod_url: str = DEFAULT_REQUEST_ROD_URL,
-                  request_rod_duration: int = 1, save: bool = False):
-        if request_method == 'rod':
+    def _request_html(self):
+        url = self.url
+        request_method = self.request_method
+        request_rod_url = self.request_rod_url
+        request_rod_duration = self.request_rod_duration
+
+        # print info
+        print(f'Requesting {url} with {request_method} and duration of {self.request_rod_duration} sec...')
+
+        if request_method == HTML_REQUEST_METHOD_ROD:
             # request rod (headless browser)
             res = requests.post(
                 request_rod_url,
                 data=json.dumps({'url': url, 'duration': request_rod_duration}),
                 headers={'Content-Type': 'application/json'},
             )
-            html = json.loads(res.content.decode('utf-8')).get('html')
-        elif request_method == 'request':
+            if res.status_code != 200:
+                raise Exception(f'Invalid response from request rod: {res.status_code}')
+            self.html_response = res
+            self.html_ = json.loads(res.content.decode('utf-8')).get('html')
+        elif request_method == HTML_REQUEST_METHOD_REQUEST:
             # plain request
             res = requests.get(url)
-            html = res.content.decode('utf-8')
+            if res.status_code != 200:
+                raise Exception(f'Invalid response from request: {res.status_code}')
+            self.html_response = res
+            self.html_ = res.content.decode('utf-8')
         else:
             raise Exception(f'Invalid request method: {request_method}')
 
         # convert html to json data
-        json_data = html_to_json_enhanced.convert(html, with_id=True)
+        self.json_data = html_to_json_enhanced.convert(self.html_, with_id=True)
 
-        if save:
+        if self.save:
             # domain
             domain = urlparse(url).netloc
 
@@ -74,24 +91,17 @@ class HtmlRequester(object):
             data_html_dir = os.path.join(DEFAULT_DATA_DIR, domain, 'html')
             filename = os.path.join(data_html_dir, f'{filename_prefix}.html')
             with open(filename, 'w') as f:
-                f.write(html)
+                f.write(self.html_)
 
             # save response json
             filename = os.path.join(data_json_dir, f'{filename_prefix}.json')
             with open(filename, 'w') as f:
-                f.write(json.dumps(json_data))
-
-        return html, json_data
-
-    def _request_html(self):
-        self.html_, self.json_data = self._get_html(
-            url=self.url,
-            request_method=self.request_method,
-            request_rod_url=self.request_rod_url,
-            request_rod_duration=self.request_rod_duration,
-        )
+                f.write(json.dumps(self.json_data))
 
     def _load_html(self):
+        # print info
+        print(f'Loading html from {self.html_path}...')
+
         with open(self.html_path, 'r') as f:
             self.html_ = f.read()
 
@@ -99,8 +109,12 @@ class HtmlRequester(object):
         # request html page if url exists
         if self.url:
             self._request_html()
-        else:
+        elif self.html_path:
             self._load_html()
+        else:
+            raise Exception('No url or html path provided')
+
+        assert self.html_ is not None, 'No html obtained!'
 
     @property
     def html(self):

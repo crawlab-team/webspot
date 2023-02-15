@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 from webspot.cmd.crawl import cmd_crawl
 from webspot.cmd.request import cmd_request
 from webspot.cmd.web import cmd_web
+from webspot.constants.html_request_method import HTML_REQUEST_METHOD_ROD
 
 parser = ArgumentParser()
 
@@ -27,7 +28,7 @@ web_parser.set_defaults(func=cmd_web)
 
 request_parser = subparsers.add_parser('request')
 request_parser.add_argument('--url', '-U', help='url to request', required=True)
-request_parser.add_argument('--method', '-M', help='request method', default='rod')
+request_parser.add_argument('--method', '-M', help='request method', default=HTML_REQUEST_METHOD_ROD)
 request_parser.set_defaults(func=cmd_request)
 
 if __name__ == '__main__':

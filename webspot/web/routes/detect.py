@@ -5,6 +5,7 @@ import traceback
 
 from fastapi import Request, HTTPException
 
+from webspot.constants.html_request_method import HTML_REQUEST_METHOD_ROD
 from webspot.detect.detectors.plain_list import PlainListDetector
 from webspot.graph.graph_loader import GraphLoader
 from webspot.request.html_requester import HtmlRequester
@@ -17,7 +18,7 @@ async def detect(payload: dict):
     url = payload.get('url')
     if url is None or url == '':
         raise HTTPException(status_code=400, detail='url is required')
-    method = payload.get('method') or os.environ.get('WEBSPOT_REQUEST_METHOD') or 'request'
+    method = payload.get('method') or os.environ.get('WEBSPOT_REQUEST_METHOD') or HTML_REQUEST_METHOD_ROD
 
     try:
         # html requester

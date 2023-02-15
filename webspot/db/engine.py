@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Union
 
@@ -19,7 +20,10 @@ def get_engine():
 def _create_tables(engine: Engine = None):
     if engine is None:
         engine = get_engine()
-    Base.metadata.create_all(engine)
+    try:
+        Base.metadata.create_all(engine)
+    except Exception as e:
+        logging.warning(e)
 
 
 def get_connection_str():

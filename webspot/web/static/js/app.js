@@ -27,16 +27,16 @@ export default {
 
     const onSubmit = async () => {
       try {
-        isLoading.value = true
+        isLoading.value = true;
         const res = await axios.post(`/detect`, {url: url.value});
-        if(res) isLoading.value = false
+        if (res) isLoading.value = false;
         results.value = res.data.results;
         html.value = res.data.html;
         error.value = res.data.error;
       } catch (error) {
-        isLoading.value = false
-        const {detail} = error?.response?.data
-        ElMessage({message: detail, type: 'warning', offset: 80})
+        isLoading.value = false;
+        const {detail} = error?.response?.data;
+        ElMessage({message: detail, type: 'warning', offset: 80});
       }
     };
 
@@ -55,13 +55,13 @@ export default {
 
     watch(() => url.value, (val) => {
       // if the input url changes, the page data should be cleared.
-      if(val) {
-        results.value = ''
-        html.value = ''
-        error.value = ''
-        isLoading.value = false
+      if (val) {
+        results.value = '';
+        html.value = '';
+        error.value = '';
+        isLoading.value = false;
       }
-    })
+    });
 
     return {
       url,

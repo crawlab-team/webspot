@@ -19,6 +19,7 @@ RUN echo `python --version`
 
 # copy webspot_rod
 COPY --from=build /go/bin/webspot_rod /go/bin/webspot_rod
+COPY ./webspot_rod/conf/webspot_rod.service /etc/systemd/system/webspot_rod.service
 
 # Install requirements
 COPY ./requirements.txt /app
@@ -36,7 +37,9 @@ ENV PORT 80
 EXPOSE 80
 
 # Start webspot rod
-RUN webspot_rod >> /var/log/webspot.log 2>&1 &
+RUN systemctl daemon-reload \
+    && systemctl enable webspot_rod \
+    && systemctl start webspot_rod
 
 ENTRYPOINT ["python", "main.py"]
 CMD ["web"]

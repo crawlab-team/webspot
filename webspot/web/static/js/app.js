@@ -1,11 +1,13 @@
 const {ref, computed, watch, onBeforeMount} = Vue;
 const {ElMessage} = ElementPlus;
+import RequestHistory from './components/request-history.js';
 import TopNavbar from './components/top-navbar.js';
 import NavSidebar from './components/nav-sidebar.js';
 import PreviewContainer from './components/preview-container.js';
 
 export default {
   components: {
+    RequestHistory,
     TopNavbar,
     NavSidebar,
     PreviewContainer,
@@ -15,6 +17,7 @@ export default {
     const results = ref('');
     const html = ref('');
     const error = ref('');
+    const requests = ref([]);
     const isLoading = ref(false);
 
     const htmlString = computed(() => {
@@ -39,6 +42,16 @@ export default {
         ElMessage({message: detail, type: 'warning', offset: 80});
       }
     };
+
+    const getRequests = async () => {
+      try {
+        const res = await axios.get(`/requests`);
+        requests.value = res.data.requests;
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    onBeforeMount(getRequests);
 
     onBeforeMount(async () => {
       const urlParam = new URL(window.location.href).searchParams.get('url');
@@ -68,6 +81,7 @@ export default {
       results,
       html,
       error,
+      requests,
       htmlString,
       onUrlChange,
       onSubmit,
@@ -78,6 +92,7 @@ export default {
   template: `
 <top-navbar :url="url" @url-change="onUrlChange" @submit="onSubmit" :is-loading="isLoading"/>
 <div class="main-container">
+
   <template v-if="url">
     <!--error-->
     <template v-if="error">
@@ -95,6 +110,7 @@ export default {
         <template #template>
           <div style="display: flex;">
             <el-skeleton style="width: 240px; margin-left: 2%;" :rows="25" />
+            <el-skeleton style="width: 240px; margin-left: 2%;" :rows="25" />
             <el-skeleton style="flex: 1; margin: 0 10%;" :rows="25" />
           </div>
         </template>
@@ -104,6 +120,7 @@ export default {
 
     <!--results-->
     <template v-else-if="results && html">
+      <request-history :requests="requests"/>
       <nav-sidebar :results="results" @submit="onSubmit" @change="onUrlChange"/>
       <preview-container :html="html"/>
     </template>

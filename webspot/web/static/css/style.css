@@ -48,9 +48,15 @@ body {
   height: calc(100vh - 48px);
 }
 
+.request-history {
+  max-width: 240px;
+  overflow: hidden;
+}
+
 .nav-sidebar {
   max-width: 240px;
   overflow: hidden;
+  border-left: solid 1px var(--el-menu-border-color);
 }
 
 .preview-container {

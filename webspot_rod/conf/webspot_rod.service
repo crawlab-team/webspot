@@ -1,0 +1,12 @@
+[Unit]
+Description=Webspot Rod
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/go/bin/webspot_rod
+Restart=always
+StandardOutput=file:/var/log/webspot_rod.log
+
+[Install]
+WantedBy=multi-user.target

@@ -1,9 +1,13 @@
 from argparse import ArgumentParser
 
+from dotenv import load_dotenv
+
 from webspot.cmd.crawl import cmd_crawl
 from webspot.cmd.request import cmd_request
 from webspot.cmd.web import cmd_web
 from webspot.constants.html_request_method import HTML_REQUEST_METHOD_ROD
+
+load_dotenv()
 
 parser = ArgumentParser()
 

@@ -17,7 +17,10 @@ WORKDIR /app
 RUN echo `uname -a`
 RUN echo `python --version`
 
-# copy webspot_rod
+# Install systemd
+RUN apt-get update && apt-get install -y systemd
+
+# Copy webspot_rod
 COPY --from=build /go/bin/webspot_rod /go/bin/webspot_rod
 COPY ./webspot_rod/conf/webspot_rod.service /etc/systemd/system/webspot_rod.service
 

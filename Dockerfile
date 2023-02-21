@@ -24,8 +24,7 @@ RUN apt-get update && apt-get install -y supervisor
 RUN apt-get update \
     && apt-get install -y --no-install-recommends dialog \
     && apt-get install -y --no-install-recommends openssh-server \
-    && echo "root:Docker!" | chpasswd \
-    && chmod u+x ./entrypoint.sh
+    && echo "root:Docker!" | chpasswd
 COPY webspot_rod/conf/sshd_config /etc/ssh/
 
 # Expose SSH port
@@ -49,6 +48,9 @@ ADD . /app
 # This is important in order for the Azure App Service to pick up the app
 ENV PORT 80
 EXPOSE 80
+
+# Change mode of entrypoint.sh
+RUN chmod u+x ./entrypoint.sh
 
 ENTRYPOINT ["entrypoint.sh"]
 CMD ["web"]

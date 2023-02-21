@@ -17,12 +17,12 @@ WORKDIR /app
 RUN echo `uname -a`
 RUN echo `python --version`
 
-# Install systemd
-RUN apt-get update && apt-get install -y systemd
+# Install supervisor
+RUN apt-get update && apt-get install -y supervisor
 
 # Copy webspot_rod
 COPY --from=build /go/bin/webspot_rod /go/bin/webspot_rod
-COPY ./webspot_rod/conf/webspot_rod.service /etc/systemd/system/webspot_rod.service
+COPY webspot_rod/conf/supervisord.conf /etc/supervisor/supervisord.conf
 
 # Install requirements
 COPY ./requirements.txt /app
@@ -39,10 +39,8 @@ ADD . /app
 ENV PORT 80
 EXPOSE 80
 
-# Start webspot rod
-RUN systemctl daemon-reload \
-    && systemctl enable webspot_rod \
-    && systemctl start webspot_rod
+# Start supervisor
+RUN supervisord -c /etc/supervisor/supervisord.conf
 
 ENTRYPOINT ["python", "main.py"]
 CMD ["web"]

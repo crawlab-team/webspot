@@ -20,6 +20,17 @@ RUN echo `python --version`
 # Install supervisor
 RUN apt-get update && apt-get install -y supervisor
 
+# Start and enable SSH
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends dialog \
+    && apt-get install -y --no-install-recommends openssh-server \
+    && echo "root:Docker!" | chpasswd \
+    && chmod u+x ./entrypoint.sh
+COPY webspot_rod/conf/sshd_config /etc/ssh/
+
+# Expose SSH port
+EXPOSE 8000 2222
+
 # Copy webspot_rod
 COPY --from=build /go/bin/webspot_rod /go/bin/webspot_rod
 COPY webspot_rod/conf/supervisord.conf /etc/supervisor/supervisord.conf

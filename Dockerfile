@@ -39,8 +39,5 @@ ADD . /app
 ENV PORT 80
 EXPOSE 80
 
-# Start supervisor
-RUN supervisord -c /etc/supervisor/supervisord.conf
-
-ENTRYPOINT ["python", "main.py"]
+ENTRYPOINT ["entrypoint.sh"]
 CMD ["web"]

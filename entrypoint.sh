@@ -7,4 +7,5 @@ service ssh start
 # Start supervisor
 supervisord -c /etc/supervisor/supervisord.conf
 
-python main.py
+# Run main.py with argument
+python main.py $1

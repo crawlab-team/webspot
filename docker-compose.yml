@@ -1,0 +1,7 @@
+version: '3.3'
+services:
+  webspot:
+    image: crawlabteam/webspot:develop
+    container_name: webspot
+    ports:
+      - '9999:80'

@@ -31,7 +31,7 @@ export default {
     const onSubmit = async () => {
       try {
         isLoading.value = true;
-        const res = await axios.post(`/detect`, {url: url.value});
+        const res = await axios.post(`/api/detect`, {url: url.value});
         if (res) isLoading.value = false;
         results.value = res.data.results;
         html.value = res.data.html;
@@ -45,7 +45,7 @@ export default {
 
     const getRequests = async () => {
       try {
-        const res = await axios.get(`/requests`);
+        const res = await axios.get(`/api/requests`);
         requests.value = res.data.requests;
       } catch (error) {
         console.error(error);

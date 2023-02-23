@@ -5,7 +5,7 @@ import requests
 
 class TestWebRoutesDetect(unittest.TestCase):
     def test_detect(self):
-        res = requests.post('http://localhost:80/detect', json={'url': 'https://quotes.toscrape.com'})
+        res = requests.post('http://localhost:80/api/detect', json={'url': 'https://quotes.toscrape.com'})
         assert res.status_code == 200
         data = res.json()
         assert data is not None
@@ -14,7 +14,8 @@ class TestWebRoutesDetect(unittest.TestCase):
         assert data.get('results') is not None and len(data.get('results')) > 0
 
     def test_detect_error(self):
-        res = requests.post('http://localhost:80/detect', json={'url': 'https://quotes.toscrape.com', 'method': 'xxx'})
+        res = requests.post('http://localhost:80/api/detect',
+                            json={'url': 'https://quotes.toscrape.com', 'method': 'xxx'})
         assert res.status_code == 200
         data = res.json()
         assert data is not None

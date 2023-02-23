@@ -5,7 +5,7 @@ from webspot.web.app import app, templates
 
 
 @app.get('/', response_class=HTMLResponse)
-async def root(request: Request):
+async def index(request: Request):
     return templates.TemplateResponse('index.html', {
         'request': request,
     })

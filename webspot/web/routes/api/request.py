@@ -7,7 +7,7 @@ from webspot.models.request import RequestModel
 from webspot.web.app import app
 
 
-@app.get('/requests')
+@app.get('/api/requests')
 async def requests(request: Request):
     session = get_session()
     stmt = select(RequestModel, PageModel) \

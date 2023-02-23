@@ -13,7 +13,7 @@ from webspot.web.app import app
 from webspot.web.utils.db import save_page_request
 
 
-@app.post('/detect')
+@app.post('/api/detect')
 async def detect(payload: dict):
     url = payload.get('url')
     if url is None or url == '':

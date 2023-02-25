@@ -1,5 +1,5 @@
-import asyncio
 import logging
+import threading
 import traceback
 
 from fastapi import Request
@@ -41,13 +41,14 @@ async def request(request: Request):
     d = RequestModel(**_d)
     d.save()
 
-    # run request
-    asyncio.ensure_future(_run_request(d))
+    # run request (async)
+    t = threading.Thread(target=_run_request, args=[d])
+    t.start()
 
     return d.to_dict()
 
 
-async def _run_request(d: RequestModel):
+def _run_request(d: RequestModel):
     try:
         # html requester
         html_requester = HtmlRequester(

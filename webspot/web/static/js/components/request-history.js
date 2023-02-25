@@ -29,8 +29,8 @@ export default {
           };
         case 'error':
           return {
-            icon: 'fa fa-crosshairs',
-            color: 'var(--color-danger)',
+            icon: 'fa fa-times',
+            color: 'var(--color-red)',
           };
       }
     };

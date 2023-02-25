@@ -3,5 +3,11 @@ services:
   webspot:
     image: crawlabteam/webspot:develop
     container_name: webspot
+    environment:
+      WEBSPOT_DATABASE_URL: mongodb://mongo:27017/webspot
     ports:
       - '9999:80'
+
+  mongo:
+    image: mongo:4.2
+    container_name: webspot_mongo

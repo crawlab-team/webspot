@@ -8,6 +8,7 @@
   <script src="//unpkg.com/element-plus"></script>
   <script src="//unpkg.com/@element-plus/icons-vue"></script>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://unpkg.com/js-base64@3.7.5/base64.js"></script>
   <link href="/static/img/favicon.svg" rel="icon">
   <link href="/static/css/style.css" rel="stylesheet">
 </head>
@@ -19,8 +20,8 @@
 
   const {createApp} = Vue;
   const app = createApp(App);
-  app.use(ElementPlus);
   app.use(store);
+  app.use(ElementPlus);
   for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component);
   }

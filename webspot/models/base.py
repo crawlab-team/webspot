@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 
-from mongoengine import Document, StringField, DateTimeField
+from mongoengine import Document, StringField, DateTimeField, pre_save
 
 from webspot.utils.mongo import encode_mongo_document
 
@@ -16,6 +16,10 @@ class Base(Document):
         'abstract': True,
         'allow_inheritance': True,
     }
+
+    @classmethod
+    def pre_save(cls, sender, document, **kwargs):
+        document.updated_at = datetime.utcnow()
 
     def to_dict(self, *args, **kwargs):
         use_db_field = kwargs.pop("use_db_field", True)

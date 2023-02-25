@@ -7,7 +7,7 @@ import html_to_json_enhanced
 import requests
 from requests import Response
 
-from webspot.constants.html_request_method import HTML_REQUEST_METHOD_ROD, HTML_REQUEST_METHOD_REQUEST
+from webspot.constants.html_request_method import HTML_REQUEST_METHOD_REQUEST, HTML_REQUEST_METHOD_ROD
 from webspot.detect.utils.transform_html_links import transform_html_links
 
 DEFAULT_REQUEST_ROD_URL = 'http://localhost:7777/request'

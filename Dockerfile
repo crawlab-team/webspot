@@ -20,6 +20,19 @@ RUN echo `python --version`
 # Install supervisor
 RUN apt-get update && apt-get install -y supervisor
 
+# Install dependencies
+RUN apt-get -qq install --no-install-recommends -y \
+    # chromium dependencies
+    libnss3 \
+    libxss1 \
+    libasound2 \
+    libxtst6 \
+    libgtk-3-0 \
+    libgbm1 \
+    ca-certificates \
+    # fonts
+    fonts-liberation fonts-noto-color-emoji fonts-noto-cjk
+
 # Start and enable SSH
 RUN apt-get update \
     && apt-get install -y --no-install-recommends dialog \

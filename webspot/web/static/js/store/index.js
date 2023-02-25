@@ -28,10 +28,10 @@ const store = createStore({
     activeRequestHtmlHighlighted(state, getters) {
       return getters.activeRequest ? getters.activeRequest.html_highlighted : '';
     },
-    activeRequestFormattedError(state) {
-      if (!state.activeRequest) return '';
-      if (!state.activeRequest.error) return '';
-      return state.activeRequest.error.split('\n').join('<br>');
+    activeRequestFormattedError(state, getters) {
+      if (!getters.activeRequest) return '';
+      if (!getters.activeRequest.error) return '';
+      return getters.activeRequest.error.split('\n').join('<br>');
     },
     setRequestForm(state, requestForm) {
       state.requestForm = requestForm;
@@ -66,7 +66,7 @@ const store = createStore({
       await dispatch('getRequests');
 
       // Set result id as active
-      state.activeRequestId = res.data._id;
+      commit('setActiveRequestId', res.data._id);
     },
   }
 });

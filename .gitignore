@@ -139,3 +139,7 @@ node_modules/
 
 *.db
 *.db-journal
+
+dev/data/
+
+*.lock

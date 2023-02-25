@@ -1,13 +1,18 @@
-from sqlalchemy.orm import mapped_column, Mapped
+from mongoengine import StringField, BooleanField, ListField
 
+from webspot.constants.html_request_method import HTML_REQUEST_METHOD_ROD
+from webspot.constants.request_status import REQUEST_STATUS_PENDING
 from webspot.models.base import Base
 
 
-class RequestModel(Base):
-    __tablename__ = 'requests'
+class Request(Base):
+    meta = {'allow_inheritance': True}
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    page_id: Mapped[int] = mapped_column(index=True)
-    html: Mapped[str] = mapped_column(nullable=True)
-    results: Mapped[str] = mapped_column(nullable=True)
-    valid: Mapped[bool] = mapped_column(nullable=True)
+    url = StringField()
+    method = StringField(default=HTML_REQUEST_METHOD_ROD)
+    status = StringField(default=REQUEST_STATUS_PENDING)
+    html = StringField()
+    html_highlighted = StringField()
+    results = ListField()
+    valid = BooleanField(default=True)
+    error = StringField()

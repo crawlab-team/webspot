@@ -1,24 +1,21 @@
 import ListDialog from './list-dialog.js';
 
 const {ref, computed, onBeforeMount} = Vue;
+const {useStore} = Vuex;
 
 export default {
   name: 'NavSidebar',
   components: {
     ListDialog,
   },
-  props: {
-    results: String,
-  },
-  setup(props, {emit}) {
-    const resultsArray = computed(() => {
-      const resultsDecoded = window.atob(props.results);
-      return JSON.parse(resultsDecoded);
-    });
+  setup() {
+    const store = useStore();
 
-    const isCollapse = ref(false);
+    const activeRequestResults = computed(() => store.getters['activeRequestResults']);
+
+    const isCollapsed = ref(false);
     const onToggle = () => {
-      isCollapse.value = !isCollapse.value;
+      isCollapsed.value = !isCollapsed.value;
     };
 
     const onClickList = (result) => {
@@ -33,13 +30,9 @@ export default {
 
     const activeResult = ref({});
 
-    onBeforeMount(() => {
-      console.debug(resultsArray.value);
-    });
-
     return {
-      resultsArray,
-      isCollapse,
+      activeRequestResults,
+      isCollapsed,
       onToggle,
       onClickList,
       dialogVisible,
@@ -47,9 +40,12 @@ export default {
       activeResult,
     };
   },
-  template: `<div class="nav-sidebar" :style="{flexBasis: isCollapse ? 'auto' : '240px'}">
-  <el-menu :collapse="isCollapse" style="height: 100%">
-    <el-menu-item v-for="(result, $index) in resultsArray" :key="$index" :index="$index" @click="() => onClickList(result)">
+  template: `<div class="nav-sidebar" :style="{flexBasis: isCollapsed ? 'auto' : '240px'}">
+  <el-menu :collapse="isCollapsed" style="height: 100%">
+    <el-menu-item style="background: inherit">
+      <h3>Detected Results:</h3>
+    </el-menu-item>
+    <el-menu-item v-for="(result, $index) in activeRequestResults" :key="$index" :index="$index" @click="() => onClickList(result)">
       <el-icon>
         <i class="fa fa-circle-o"></i>
       </el-icon>
@@ -59,12 +55,12 @@ export default {
         <span class="count"> ({{ result.nodes.items.length }})</span>
       </el-tag>
     </el-menu-item>
-    <el-menu-item style="border-top: 1px solid #CCCCCC; position: absolute; bottom: 0; width: 100%" @click="onToggle">
+    <el-menu-item style="border-top: solid 1px var(--el-menu-border-color); position: absolute; bottom: 0; width: 100%" @click="onToggle">
       <el-icon>
-        <DArrowRight v-if="isCollapse"/>
+        <DArrowRight v-if="isCollapsed"/>
         <DArrowLeft v-else/>
       </el-icon>
-      <span>{{ isCollapse ? 'Expand' : 'Collapse' }}</span>
+      <span>{{ isCollapsed ? 'Expand' : 'Collapse' }}</span>
     </el-menu-item>
   </el-menu>
 

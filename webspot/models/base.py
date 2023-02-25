@@ -1,9 +1,23 @@
+import json
 from datetime import datetime
 
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from mongoengine import Document, StringField, DateTimeField
+
+from webspot.utils.mongo import encode_mongo_document
 
 
-class Base(DeclarativeBase):
-    __table_args__ = {'sqlite_autoincrement': True}
+class Base(Document):
+    created_at = DateTimeField(default=datetime.utcnow)
+    created_by = StringField()
+    updated_at = DateTimeField(default=datetime.utcnow)
+    updated_by = StringField()
 
-    created_at: Mapped[str] = mapped_column(default=lambda _: datetime.now().timestamp())
+    meta = {
+        'abstract': True,
+        'allow_inheritance': True,
+    }
+
+    def to_dict(self, *args, **kwargs):
+        use_db_field = kwargs.pop("use_db_field", True)
+        doc_json = encode_mongo_document(self.to_mongo(use_db_field))
+        return json.loads(doc_json)

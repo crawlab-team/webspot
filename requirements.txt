@@ -8,3 +8,5 @@ uvicorn==0.20.0
 SQLAlchemy==2.0.2
 PyMySQL==1.0.2
 alembic==1.9.3
+python-dotenv==0.21.1
+mongoengine==0.26.0

@@ -52,5 +52,4 @@ EXPOSE 80
 # Change mode of entrypoint.sh
 RUN chmod u+x ./entrypoint.sh
 
-ENTRYPOINT ["sh", "entrypoint.sh"]
-CMD ["web"]
+CMD ["sh", "entrypoint.sh"]

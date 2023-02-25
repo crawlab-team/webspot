@@ -1,14 +1,13 @@
 from typing import Union
 
+from mongoengine import connect
 from sqlalchemy.orm import Session
 
-from webspot.db.engine import get_engine
+from webspot.db.engine import get_connection_str
 
 _session: Union[Session, None] = None
 
 
 def get_session():
-    global _session
-    if _session is None or _session.is_active is False:
-        _session = Session(bind=get_engine())
-    return _session
+    conn_str = get_connection_str()
+    connect(host=conn_str)

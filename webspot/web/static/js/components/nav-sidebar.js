@@ -1,20 +1,17 @@
 import ListDialog from './list-dialog.js';
 
 const {ref, computed, onBeforeMount} = Vue;
+const {useStore} = Vuex;
 
 export default {
   name: 'NavSidebar',
   components: {
     ListDialog,
   },
-  props: {
-    results: String,
-  },
-  setup(props, {emit}) {
-    const resultsArray = computed(() => {
-      const resultsDecoded = window.atob(props.results);
-      return JSON.parse(resultsDecoded);
-    });
+  setup() {
+    const store = useStore();
+
+    const activeRequestResults = computed(() => store.getters['activeRequestResults']);
 
     const isCollapsed = ref(false);
     const onToggle = () => {
@@ -33,12 +30,8 @@ export default {
 
     const activeResult = ref({});
 
-    onBeforeMount(() => {
-      console.debug(resultsArray.value);
-    });
-
     return {
-      resultsArray,
+      activeRequestResults,
       isCollapsed,
       onToggle,
       onClickList,
@@ -49,7 +42,10 @@ export default {
   },
   template: `<div class="nav-sidebar" :style="{flexBasis: isCollapsed ? 'auto' : '240px'}">
   <el-menu :collapse="isCollapsed" style="height: 100%">
-    <el-menu-item v-for="(result, $index) in resultsArray" :key="$index" :index="$index" @click="() => onClickList(result)">
+    <el-menu-item style="background: inherit">
+      <h3>Detected Results:</h3>
+    </el-menu-item>
+    <el-menu-item v-for="(result, $index) in activeRequestResults" :key="$index" :index="$index" @click="() => onClickList(result)">
       <el-icon>
         <i class="fa fa-circle-o"></i>
       </el-icon>

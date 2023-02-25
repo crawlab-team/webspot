@@ -53,6 +53,10 @@ body {
   overflow: hidden;
 }
 
+.request-history .el-menu {
+  border-right: none;
+}
+
 .nav-sidebar {
   max-width: 240px;
   overflow: hidden;
@@ -68,4 +72,12 @@ body {
 
 iframe {
   border: none;
+}
+
+.el-menu-item:focus {
+  background: inherit;
+}
+
+.el-menu-item.is-active {
+  background: var(--el-menu-hover-bg-color);
 }

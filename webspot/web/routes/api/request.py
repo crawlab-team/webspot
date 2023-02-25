@@ -42,7 +42,7 @@ async def request(request: Request):
     d.save()
 
     # run request
-    asyncio.run(_run_request(d))
+    asyncio.ensure_future(_run_request(d))
 
     return d.to_dict()
 

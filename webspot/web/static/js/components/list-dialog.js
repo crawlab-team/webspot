@@ -18,7 +18,6 @@ export default {
       if (!props.result) return [];
       return props.result.extract_rules_css.fields.map(f => {
         const {data} = props.result.extract_rules_css;
-        console.debug(data);
         // get all the data for each column
         const arr = data.map(d => d[f.name]).filter(d => d !== undefined);
         // add the label of each column

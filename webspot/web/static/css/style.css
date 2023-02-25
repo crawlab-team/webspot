@@ -53,14 +53,13 @@ body {
   overflow: hidden;
 }
 
-.request-history .el-menu {
-  border-right: none;
-}
+/*.request-history .el-menu {*/
+/*  border-right: none;*/
+/*}*/
 
 .nav-sidebar {
   max-width: 240px;
   overflow: hidden;
-  border-left: solid 1px var(--el-menu-border-color);
 }
 
 .preview-container {

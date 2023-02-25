@@ -80,3 +80,24 @@ iframe {
 .el-menu-item.is-active {
   background: var(--el-menu-hover-bg-color);
 }
+
+.error-message-container {
+  width: calc(100% - 240px);
+  height: 100%;
+}
+
+.error-message-container .el-result__extra {
+  width: 100%;
+  max-height: 640px;
+}
+
+.error-message-container .el-result__extra .error-message {
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+  text-align: left;
+  color: var(--color-red);
+  border: 1px solid var(--color-light-grey);
+  padding: 10px;
+  background: #ffffff;
+}

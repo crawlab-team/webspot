@@ -65,9 +65,9 @@ export default {
   <template v-else>
     <!--error-->
     <template v-if="activeRequestStatus === 'error'">
-      <el-result icon="error" style="width: 100%" title="An error occurred" sub-title="Please try again">
+      <el-result class="error-message-container" icon="error" style="" title="An error occurred" sub-title="Please try again">
         <template #extra>
-          <pre v-html="activeRequestFormattedError" style="text-align: left; color: var(--color-red); border: 1px solid var(--color-light-grey); padding: 10px; background: #ffffff"/>
+          <pre class="error-message" v-html="activeRequestFormattedError"/>
         </template>
       </el-result>
     </template>

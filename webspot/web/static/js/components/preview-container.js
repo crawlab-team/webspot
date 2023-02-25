@@ -18,6 +18,7 @@ export default {
       isLoading.value = true;
       setTimeout(() => {
         isLoading.value = false;
+        console.debug(activeRequestHtmlHighlighted.value);
       }, 1000);
     };
 

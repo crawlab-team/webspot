@@ -17,6 +17,10 @@ export default {
 
     onBeforeMount(() => {
       store.dispatch(`getRequests`);
+
+      setInterval(() => {
+        store.dispatch(`getRequests`);
+      }, 15 * 1e3);
     });
 
     const isEmpty = computed(() => store.getters['isEmpty']);

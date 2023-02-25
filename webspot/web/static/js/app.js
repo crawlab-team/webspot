@@ -1,5 +1,5 @@
-const {ref, computed, watch, onBeforeMount} = Vue;
-const {ElMessage} = ElementPlus;
+const {ref, computed, onBeforeMount} = Vue;
+const {useStore} = Vuex;
 import RequestHistory from './components/request-history.js';
 import TopNavbar from './components/top-navbar.js';
 import NavSidebar from './components/nav-sidebar.js';
@@ -12,104 +12,72 @@ export default {
     NavSidebar,
     PreviewContainer,
   },
-  setup(props) {
-    const url = ref('');
-    const results = ref('');
-    const html = ref('');
-    const error = ref('');
-    const requests = ref([]);
+  setup() {
+    const store = useStore();
+
+    onBeforeMount(() => {
+      store.dispatch(`getRequests`);
+    });
+
+    const isEmpty = computed(() => store.getters['isEmpty']);
+
+    const activeRequestStatus = computed(() => store.getters['activeRequestStatus']);
+
+    const activeRequestFormattedError = computed(() => store.getters['activeRequestFormattedError']);
+
+    const requestForm = ref({
+      url: '',
+    });
+
     const isLoading = ref(false);
-
-    const htmlString = computed(() => {
-      return atob(props.html);
-    });
-
-    const onUrlChange = (value) => {
-      url.value = value;
-    };
-
     const onSubmit = async () => {
-      try {
-        isLoading.value = true;
-        const res = await axios.post(`/api/detect`, {url: url.value});
-        if (res) isLoading.value = false;
-        results.value = res.data.results;
-        html.value = res.data.html;
-        error.value = res.data.error;
-      } catch (error) {
-        isLoading.value = false;
-        const {detail} = error?.response?.data;
-        ElMessage({message: detail, type: 'warning', offset: 80});
-      }
+      isLoading.value = true;
+      await store.dispatch('postRequest', {...requestForm.value});
+      isLoading.value = false;
     };
-
-    const getRequests = async () => {
-      try {
-        const res = await axios.get(`/api/requests`);
-        requests.value = res.data.requests;
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    onBeforeMount(getRequests);
-
-    onBeforeMount(async () => {
-      const urlParam = new URL(window.location.href).searchParams.get('url');
-      if (urlParam) {
-        url.value = urlParam;
-        await onSubmit();
-      }
-    });
-
-    const formattedError = computed(() => {
-      if (!props.error) return '';
-      return props.error.split('\n').join('<br>');
-    });
-
-    watch(() => url.value, (val) => {
-      // if the input url changes, the page data should be cleared.
-      if (val) {
-        results.value = '';
-        html.value = '';
-        error.value = '';
-        isLoading.value = false;
-      }
-    });
 
     return {
-      url,
-      results,
-      html,
-      error,
-      requests,
-      htmlString,
-      onUrlChange,
-      onSubmit,
-      formattedError,
+      isEmpty,
+      activeRequestStatus,
+      activeRequestFormattedError,
+      requestForm,
       isLoading,
+      onSubmit,
     };
   },
   template: `
-<top-navbar :url="url" @url-change="onUrlChange" @submit="onSubmit" :is-loading="isLoading"/>
-<div class="main-container">
+<top-navbar/>
 
-  <template v-if="url">
+<div class="main-container">
+  <request-history/>
+
+  <!--is-empty-->
+  <template v-if="isEmpty">
+    <el-empty style="width: 100%; padding-bottom: 15%;" description="Please enter the URL to start">
+      <div class="url-wrapper" style="display: flex; width: 640px;">
+        <el-input v-model="requestForm.url" placeholder="Please enter the URL" @keyup.enter="onSubmit"/>
+        <el-button type="primary" @click="onSubmit" style="margin-left: 5px" :loading="isLoading">Submit</el-button>
+      </div>
+    </el-empty>
+  </template>
+  <!--./is-empty-->
+
+  <template v-else>
     <!--error-->
-    <template v-if="error">
+    <template v-if="activeRequestStatus === 'error'">
       <el-result icon="error" style="width: 100%" title="An error occurred" sub-title="Please try again">
         <template #extra>
-          <pre v-html="formattedError" style="text-align: left; color: var(--color-red); border: 1px solid var(--color-light-grey); padding: 10px; background: #ffffff"/>
+          <pre v-html="activeRequestFormattedError" style="text-align: left; color: var(--color-red); border: 1px solid var(--color-light-grey); padding: 10px; background: #ffffff"/>
         </template>
       </el-result>
     </template>
     <!--./error-->
 
     <!--skeleton-->
-    <template v-else-if="isLoading">
-      <el-skeleton style="padding-top: 2%;" animated :throttle="500">
+    <template v-else-if="activeRequestStatus === 'pending'">
+      <el-skeleton style="padding-top: 2%; flex: 1" animated :throttle="500">
         <template #template>
           <div style="display: flex;">
-            <el-skeleton style="width: 240px; margin-left: 2%;" :rows="25" />
             <el-skeleton style="width: 240px; margin-left: 2%;" :rows="25" />
             <el-skeleton style="flex: 1; margin: 0 10%;" :rows="25" />
           </div>
@@ -119,35 +87,12 @@ export default {
     <!--./skeleton-->
 
     <!--results-->
-    <template v-else-if="results && html">
-      <request-history :requests="requests"/>
-      <nav-sidebar :results="results" @submit="onSubmit" @change="onUrlChange"/>
-      <preview-container :html="html"/>
+    <template v-else-if="activeRequestStatus === 'success'">
+      <nav-sidebar/>
+      <preview-container/>
     </template>
     <!--./results-->
-
-    <!--empty-->
-    <template v-else>
-      <el-empty style="width: 100%; padding-bottom: 15%;" description="Please enter the URL to start">
-        <div class="url-wrapper" style="display: flex; width: 640px;">
-          <el-input v-model="url" placeholder="Please enter the URL" @keyup.enter="onSubmit"/>
-          <el-button type="primary" @click="onSubmit" style="margin-left: 5px" :loading="isLoading">Submit</el-button>
-        </div>
-      </el-empty>
-    </template>
-    <!--./empty-->
   </template>
-
-  <!--no-url-->
-  <template v-else>
-    <el-empty style="width: 100%; padding-bottom: 15%;" description="Please enter the URL to start">
-      <div class="url-wrapper" style="display: flex; width: 640px;">
-        <el-input v-model="url" placeholder="Please enter the URL" @keyup.enter="onSubmit"/>
-        <el-button type="primary" @click="onSubmit" style="margin-left: 5px" :loading="isLoading">Submit</el-button>
-      </div>
-    </el-empty>
-  </template>
-  <!--./no-url-->
 </div>
 `
 };

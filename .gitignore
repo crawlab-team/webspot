@@ -141,3 +141,5 @@ node_modules/
 *.db-journal
 
 dev/data/
+
+*.lock

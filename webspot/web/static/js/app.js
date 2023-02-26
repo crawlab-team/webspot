@@ -31,6 +31,7 @@ export default {
 
     const requestForm = ref({
       url: '',
+      no_async: false,
     });
 
     const isLoading = ref(false);

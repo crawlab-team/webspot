@@ -2,8 +2,14 @@ import os
 
 from mongoengine import connect as mongo_connect
 
+from webspot.utils.test import is_running_unit_tests
+
 
 def connect():
+    if is_running_unit_tests():
+        mongo_connect("mockdb", host="mongomock://localhost")
+        return
+
     conn_str = get_connection_str()
     mongo_connect(host=conn_str)
 

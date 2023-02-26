@@ -1,10 +1,11 @@
 import json
+import logging
 import os
 from typing import Union
 from urllib.parse import urlparse
 
 import html_to_json_enhanced
-import requests
+import httpx
 from requests import Response
 
 from webspot.constants.html_request_method import HTML_REQUEST_METHOD_REQUEST, HTML_REQUEST_METHOD_ROD
@@ -37,6 +38,9 @@ class HtmlRequester(object):
         self.html_response: Union[Response, None] = None
         self.json_data: Union[dict, None] = None
 
+        # logger
+        self.logger = logging.getLogger('webspot.request.html_requester')
+
     def _request_html(self):
         url = self.url
         request_method = self.request_method
@@ -44,13 +48,13 @@ class HtmlRequester(object):
         request_rod_duration = self.request_rod_duration
 
         # print info
-        print(f'Requesting {url} with {request_method} and duration of {self.request_rod_duration} sec...')
+        self.logger.info(f'Requesting {url} [method="{request_method}", duration={self.request_rod_duration}]')
 
         if request_method == HTML_REQUEST_METHOD_ROD:
             # request rod (headless browser)
-            res = requests.post(
+            res = httpx.post(
                 request_rod_url,
-                data=json.dumps({'url': url, 'duration': request_rod_duration}),
+                data={'url': url, 'duration': request_rod_duration},
                 headers={'Content-Type': 'application/json'},
             )
             if res.status_code != 200:
@@ -59,7 +63,7 @@ class HtmlRequester(object):
             self.html_ = json.loads(res.content.decode('utf-8')).get('html')
         elif request_method == HTML_REQUEST_METHOD_REQUEST:
             # plain request
-            res = requests.get(url)
+            res = httpx.get(url)
             if res.status_code != 200:
                 raise Exception(f'Invalid response from request: {res.status_code}')
             self.html_response = res
@@ -100,7 +104,7 @@ class HtmlRequester(object):
 
     def _load_html(self):
         # print info
-        print(f'Loading html from {self.html_path}...')
+        self.logger.info(f'Loading html from {self.html_path}...')
 
         with open(self.html_path, 'r') as f:
             self.html_ = f.read()

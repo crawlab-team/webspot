@@ -16,3 +16,4 @@ class Request(Base):
     results = ListField()
     valid = BooleanField(default=True)
     error = StringField()
+    no_async = BooleanField(default=False)

@@ -1,19 +1,41 @@
-import unittest
+import itertools
+from unittest.mock import patch, MagicMock
 
-import requests
+import pytest
+
+from webspot.constants.request_status import REQUEST_STATUS_SUCCESS, REQUEST_STATUS_PENDING
+from webspot.test.web.routes import client
+
+params_url = [
+    'https://quotes.toscrape.com',
+    'https://books.toscrape.com',
+]
+params_method = [
+    'request',
+    # 'rod',
+]
+params_no_async = [True, False]
 
 
-class TestWebRoutesApi(unittest.TestCase):
-    def test_post(self):
-        res = requests.post('http://localhost:80/api/requests',
-                            json={'url': 'https://quotes.toscrape.com', 'method': 'request'})
-        assert res.status_code == 200
-        data = res.json()
-        print(data)
-        assert data is not None
-        assert data.get('_id') is not None
-        assert data.get('url') == 'https://quotes.toscrape.com'
+@pytest.mark.parametrize('url, method, no_async', list(itertools.product(params_url, params_method, params_no_async)))
+@patch('webspot.models.request.Request')
+def test_post(mocked_request_model, url, method, no_async):
+    # mock the model
+    mock_instance = MagicMock()
+    mock_instance.save.return_value = None
+    mocked_request_model.return_value = mock_instance
 
+    # post
+    res = client.post('/api/requests', json={'url': url, 'method': method, 'no_async': no_async})
 
-if __name__ == '__main__':
-    unittest.main()
+    # assert
+    assert res.status_code == 200
+    data = res.json()
+    assert data is not None
+    assert data.get('url') == url
+    assert data.get('method') == method
+    assert data.get('no_async') == no_async
+    if no_async:
+        assert data.get('status') == REQUEST_STATUS_PENDING
+    else:
+        assert data.get('status') == REQUEST_STATUS_SUCCESS

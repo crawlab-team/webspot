@@ -26,14 +26,14 @@ def transform_html_links(html: str, url: str) -> str:
 
 
 def _transform(el: Tag, key: str, root_url: str):
-    if el.get(key) and not re.search(re.escape(el[key]), r'^(https?:)?//'):
-        el[key] = urljoin(root_url, el[key])
+    if el.get(key) and _is_relative_url_path(el[key]):
+        el[key] = transform_url(root_url, el[key])
 
 
 def _transform_a(el: Tag, root_url: str, target_blank: bool = True):
     key = 'href'
-    if el.get(key) and el[key].startswith('/'):
-        url = urljoin(root_url, el[key])
+    if el.get(key) and _is_relative_url_path(el[key]):
+        url = transform_url(root_url, el[key])
         el[key] = f'/?url={url}'
         if target_blank:
             el['target'] = '_blank'
@@ -46,3 +46,13 @@ def _is_valid_asset_url(url: str) -> bool:
         if keyword in url.lower():
             return True
     return False
+
+
+def _is_relative_url_path(url: str) -> bool:
+    return not re.search(re.escape(url), r'^(https?:)?//')
+
+
+def transform_url(root_url: str, url: str) -> str:
+    if not _is_relative_url_path(url):
+        return url
+    return urljoin(root_url, url)

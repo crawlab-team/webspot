@@ -10,11 +10,6 @@ export default {
 
     const isCollapsed = ref(false);
 
-    const onClickNewRequest = async () => {
-      const res = await ElMessageBox.prompt('Please enter the URL to request');
-      await store.dispatch('postRequest', {url: res.value});
-    };
-
     const getRequestDataByStatus = (request) => {
       switch (request.status) {
         case 'pending':
@@ -45,7 +40,6 @@ export default {
       requests,
       isCollapsed,
       getRequestDataByStatus,
-      onClickNewRequest,
       activeRequestId,
       onClickRequest,
     };
@@ -53,11 +47,6 @@ export default {
   template: `
 <div class="request-history" style="flex: 0 0 240px">
   <el-menu :default-active="activeRequestId" v-model="" style="height: 100%">
-    <el-menu-item class="new-request" style="background: inherit">
-      <el-button type="primary" @click="onClickNewRequest">
-        New Request
-      </el-button>
-    </el-menu-item>
     <el-menu-item v-for="(request, $index) in requests" :key="$index" :index="request._id" @click="() => onClickRequest(request)">
       <el-icon size="12">
         <i :class="getRequestDataByStatus(request).icon" :style="{color: getRequestDataByStatus(request).color}"></i>

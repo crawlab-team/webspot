@@ -19,3 +19,8 @@ class RequestPayload(BaseModel):
         title='No Async',
         description='If true, the request will be run synchronously, and return the result immediately.',
     )
+    duration: Union[int, None] = Field(
+        default=3,
+        title='Duration (seconds)',
+        description='The duration to request the page (method "rod" only)',
+    )

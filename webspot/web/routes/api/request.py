@@ -16,21 +16,21 @@ from webspot.web.models.response.request import RequestResponse
 
 
 @app.get('/api/requests')
-async def requests(req: Request):
+async def requests():
     """Get all requests."""
     docs = RequestModel.objects().order_by('-_id')
     return [d.to_dict() for d in docs]
 
 
 @app.get('/api/requests/{id}')
-async def request(req: Request, id: str):
+async def request(id: str):
     """Get a request."""
     d = RequestModel.objects(pk=id).first()
     return d.to_dict()
 
 
 @app.put('/api/requests/{id}')
-async def request(req: Request, id: str):
+async def request(id: str):
     """Update a request."""
     d = RequestModel.objects(pk=id).first()
     _d = await request.json()
@@ -39,7 +39,7 @@ async def request(req: Request, id: str):
 
 
 @app.post('/api/requests')
-async def request(req: Request, payload: RequestPayload = Body(
+async def request(payload: RequestPayload = Body(
     example={
         'url': 'https://quotes.toscrape.com',
         'method': 'request',
@@ -71,6 +71,7 @@ def _run_request(d: RequestModel):
         html_requester = HtmlRequester(
             url=d.url,
             request_method=d.method,
+            request_rod_duration=d.duration,
         )
         html_requester.run()
 

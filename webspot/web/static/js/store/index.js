@@ -1,12 +1,16 @@
 const {createStore} = Vuex;
 
+const defaultRequestForm = {
+  method: 'request',
+  duration: 3,
+};
+
 const store = createStore({
   state() {
     return {
       requests: [],
       activeRequestId: undefined,
-      isLoading: false,
-      requestForm: {},
+      requestForm: undefined,
     };
   },
   getters: {
@@ -33,11 +37,19 @@ const store = createStore({
       if (!getters.activeRequest.error) return '';
       return getters.activeRequest.error.split('\n').join('<br>');
     },
-    setRequestForm(state, requestForm) {
-      state.requestForm = requestForm;
-    },
-    resetRequestForm(state) {
-      state.requestForm = {};
+    requestForm(state) {
+      if (state.requestForm) {
+        return {...state.requestForm};
+      }
+      if (localStorage.getItem('requestForm')) {
+        try {
+          return JSON.parse(localStorage.getItem('requestForm'));
+        } catch {
+        }
+      }
+      localStorage.setItem('requestForm', JSON.stringify(defaultRequestForm));
+      state.requestForm = {...defaultRequestForm};
+      return {...defaultRequestForm};
     },
   },
   mutations: {
@@ -47,9 +59,18 @@ const store = createStore({
     setActiveRequestId(state, id) {
       state.activeRequestId = id;
     },
-    setIsLoading(state, isLoading) {
-      state.isLoading = isLoading;
-    }
+    setRequestForm(state, requestForm) {
+      state.requestForm = {
+        ...requestForm,
+      };
+      localStorage.setItem('requestForm', JSON.stringify({
+        ...requestForm,
+      }));
+    },
+    resetRequestForm(state) {
+      localStorage.setItem('requestForm', JSON.stringify(defaultRequestForm));
+      return {...defaultRequestForm};
+    },
   },
   actions: {
     async getRequests({commit, state}) {

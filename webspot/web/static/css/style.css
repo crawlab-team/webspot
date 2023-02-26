@@ -30,12 +30,21 @@ body {
 }
 
 .top-navbar .logo-wrapper {
-  margin-right: 10px;
+  margin-right: 18px;
   height: 36px;
+  padding: 0 24px;
+  border-right: var(--color-light-grey) 1px solid;
 }
 
 .top-navbar .logo-wrapper img {
   height: 100%;
+}
+
+.top-navbar .new-request-wrapper {
+  padding: 0 18px 0 0;
+}
+
+.top-navbar .config-wrapper {
 }
 
 .main-container {
@@ -50,7 +59,7 @@ body {
 
 .request-history {
   max-width: 240px;
-  overflow: hidden;
+  overflow: auto;
 }
 
 /*.request-history .el-menu {*/

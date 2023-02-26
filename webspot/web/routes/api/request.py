@@ -76,7 +76,7 @@ def _run_request(d: RequestModel):
 
         # graph loader
         graph_loader = GraphLoader(
-            html=html_requester.html,
+            html=html_requester.html_,
             json_data=html_requester.json_data,
         )
         graph_loader.run()
@@ -90,7 +90,7 @@ def _run_request(d: RequestModel):
 
         # update request
         d.status = REQUEST_STATUS_SUCCESS
-        d.html = html_requester.html
+        d.html = html_requester.html_
         d.html_highlighted = detector.html
         d.results = detector.results
         d.save()

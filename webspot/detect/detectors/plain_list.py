@@ -14,20 +14,17 @@ from sklearn.preprocessing import normalize
 
 from webspot.constants.field_extract_rule_type import FIELD_EXTRACT_RULE_TYPE_TEXT, FIELD_EXTRACT_RULE_TYPE_LINK_URL, \
     FIELD_EXTRACT_RULE_TYPE_IMAGE_URL
+from webspot.detect.detectors.base import BaseDetector
 from webspot.detect.utils.math import log_positive
 from webspot.detect.utils.node import get_node_inner_text
-from webspot.graph.graph_loader import GraphLoader
 from webspot.detect.utils.highlight_html import highlight_html
 from webspot.detect.models.field import Field
 from webspot.detect.models.list_result import ListResult
-from webspot.request.html_requester import HtmlRequester
 
 
-class PlainListDetector(object):
+class PlainListDetector(BaseDetector):
     def __init__(
         self,
-        graph_loader: GraphLoader,
-        html_requester: HtmlRequester,
         dbscan_eps: float = 0.5,
         dbscan_min_samples: int = 3,
         dbscan_metric: str = 'euclidean',
@@ -36,19 +33,17 @@ class PlainListDetector(object):
         item_nodes_samples: int = 5,
         node2vec_ratio: float = 1.,
         text_length_discount: float = 1e-2,
+        *args,
+        **kwargs,
     ):
+        super().__init__(*args, **kwargs)
+
         # settings
         self.entropy_threshold = entropy_threshold
         self.score_threshold = score_threshold
         self.item_nodes_samples = item_nodes_samples
         self.node2vec_ratio = node2vec_ratio
         self.text_length_discount = text_length_discount
-
-        # graph loader
-        self.graph_loader = graph_loader
-
-        # html requester
-        self.html_requester = html_requester
 
         # dbscan model
         self.dbscan = DBSCAN(

@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 
 import html_to_json_enhanced
 import httpx
+from httpx import Timeout
 from requests import Response
 
 from webspot.constants.html_request_method import HTML_REQUEST_METHOD_REQUEST, HTML_REQUEST_METHOD_ROD
@@ -22,7 +23,7 @@ class HtmlRequester(object):
         html_path: str = None,
         request_method: str = HTML_REQUEST_METHOD_REQUEST,
         request_rod_url: str = DEFAULT_REQUEST_ROD_URL,
-        request_rod_duration: int = 3,
+        request_rod_duration: int = 10,
         save: bool = False,
     ):
         # settings
@@ -54,7 +55,7 @@ class HtmlRequester(object):
             # request rod (headless browser)
             res = httpx.post(
                 request_rod_url,
-                data={'url': url, 'duration': request_rod_duration},
+                json={'url': url, 'duration': request_rod_duration},
                 headers={'Content-Type': 'application/json'},
             )
             if res.status_code != 200:
@@ -63,7 +64,7 @@ class HtmlRequester(object):
             self.html_ = json.loads(res.content.decode('utf-8')).get('html')
         elif request_method == HTML_REQUEST_METHOD_REQUEST:
             # plain request
-            res = httpx.get(url)
+            res = httpx.get(url, timeout=Timeout(timeout=self.request_rod_duration))
             if res.status_code != 200:
                 raise Exception(f'Invalid response from request: {res.status_code}')
             self.html_response = res

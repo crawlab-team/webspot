@@ -15,3 +15,4 @@ class RequestResponse(BaseModel):
     valid: bool
     error: Union[str, None]
     no_async: bool
+    duration: Union[int, None]

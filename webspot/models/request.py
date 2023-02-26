@@ -1,4 +1,4 @@
-from mongoengine import StringField, BooleanField, ListField
+from mongoengine import StringField, BooleanField, ListField, IntField
 
 from webspot.constants.html_request_method import HTML_REQUEST_METHOD_REQUEST
 from webspot.constants.request_status import REQUEST_STATUS_PENDING
@@ -10,6 +10,7 @@ class Request(Base):
 
     url = StringField()
     method = StringField(default=HTML_REQUEST_METHOD_REQUEST)
+    duration = IntField()
     status = StringField(default=REQUEST_STATUS_PENDING)
     html = StringField()
     html_highlighted = StringField()

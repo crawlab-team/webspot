@@ -29,16 +29,18 @@ export default {
 
     const activeRequestFormattedError = computed(() => store.getters['activeRequestFormattedError']);
 
-    const requestForm = ref({
+    const defaultRequestForm = {
       url: '',
       no_async: false,
-    });
+    };
+    const requestForm = ref({...defaultRequestForm});
 
     const isLoading = ref(false);
     const onSubmit = async () => {
       isLoading.value = true;
       await store.dispatch('postRequest', {...requestForm.value});
       isLoading.value = false;
+      requestForm.value = {...defaultRequestForm};
     };
 
     return {

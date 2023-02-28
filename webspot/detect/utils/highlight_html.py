@@ -67,4 +67,11 @@ def _add_label(el: Tag, soup: BeautifulSoup, label: str, type_: str = None):
     _add_class(label_el, ['webspot-highlight-label'])
     if type_:
         _add_class(label_el, [f'webspot-highlight-label-{type_}'])
-    pass
+
+
+def add_class(el: Tag, classes: List[str]):
+    return _add_class(el, classes)
+
+
+def add_label(el: Tag, soup: BeautifulSoup, label: str, type_: str = None):
+    return _add_label(el, soup, label, type_)

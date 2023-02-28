@@ -1,13 +1,12 @@
 import threading
 import traceback
 
-from fastapi import Request, Body, Path
-from pydantic import Field
+from fastapi import Body
 
 from webspot.constants.request_status import REQUEST_STATUS_SUCCESS, REQUEST_STATUS_ERROR
 from webspot.detect.detectors.plain_list import PlainListDetector
 from webspot.graph.graph_loader import GraphLoader
-from webspot.models.request import Request as RequestModel
+from webspot.models.request import Request
 from webspot.request.html_requester import HtmlRequester
 from webspot.web.app import app
 from webspot.web.logging import logger
@@ -18,21 +17,21 @@ from webspot.web.models.response.request import RequestResponse
 @app.get('/api/requests')
 async def requests():
     """Get all requests."""
-    docs = RequestModel.objects().order_by('-_id')
+    docs = Request.objects().order_by('-_id')
     return [d.to_dict() for d in docs]
 
 
 @app.get('/api/requests/{id}')
 async def request(id: str):
     """Get a request."""
-    d = RequestModel.objects(pk=id).first()
+    d = Request.objects(pk=id).first()
     return d.to_dict()
 
 
 @app.put('/api/requests/{id}')
 async def request(id: str):
     """Update a request."""
-    d = RequestModel.objects(pk=id).first()
+    d = Request.objects(pk=id).first()
     _d = await request.json()
     d.update(_d)
     return d.to_dict()
@@ -47,7 +46,7 @@ async def request(payload: RequestPayload = Body(
     }
 )) -> RequestResponse:
     """Create a request. This is used to generate a new request to detect a web page."""
-    d = RequestModel(
+    d = Request(
         url=payload.url,
         method=payload.method,
         no_async=payload.no_async,
@@ -65,7 +64,7 @@ async def request(payload: RequestPayload = Body(
     return d.to_dict()
 
 
-def _run_request(d: RequestModel):
+def _run_request(d: Request):
     try:
         # html requester
         html_requester = HtmlRequester(

@@ -1,3 +1,4 @@
+from typing import Optional
 from urllib.parse import urlparse
 
 import numpy as np
@@ -6,6 +7,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import normalize
 
 from webspot.detect.detectors.base import BaseDetector
+from webspot.detect.models.result import Result
+from webspot.detect.models.selector import Selector
 from webspot.detect.utils.transform_html_links import transform_url
 from webspot.detect.utils.url import get_url_domain
 from webspot.graph.graph_loader import GraphLoader
@@ -47,7 +50,7 @@ class PaginationDetector(BaseDetector):
         self._scores_idx_max = None
 
         # result
-        self.result = None
+        self.result: Optional[Result] = None
 
     @property
     def root_url(self):
@@ -150,7 +153,7 @@ class PaginationDetector(BaseDetector):
     def _pre_process(self):
         self._get_internal_link_nodes()
 
-    def _train(self):
+    def _train(self) -> np.array:
         self._calculate_scores_url_path_fragments()
         self._calculate_scores_feature_next()
         self._calculate_scores_text()
@@ -166,16 +169,17 @@ class PaginationDetector(BaseDetector):
             ),
             norm='l2',
             axis=1,
-        ).sum(axis=1)
+        )
+        self.scores = self._scores.sum(axis=1)
 
     def _filter(self):
-        self._scores_idx = np.argwhere(self._scores >= self.score_threshold).T[0]
+        self._scores_idx = np.argwhere(self.scores >= self.score_threshold).T[0]
 
     def _sort(self):
         if len(self._scores_idx) == 0:
             return
 
-        _idx = np.argmax(self._scores[self._scores_idx])
+        _idx = np.argmax(self.scores[self._scores_idx])
         self._scores_idx_max = self._scores_idx[_idx]
 
     def _extract(self):
@@ -183,11 +187,24 @@ class PaginationDetector(BaseDetector):
             return
 
         node = self.internal_link_nodes[self._scores_idx_max]
-        css_selector_path = self.graph_loader.get_node_css_selector_path(node)
-        self.result = {
-            'score': self._scores[self._scores_idx_max],
-            'css_selector_path': css_selector_path,
-        }
+        next_selector = Selector(name='next', selector=self.graph_loader.get_node_css_selector_path(node))
+        score = self.scores[self._scores_idx_max]
+        score_url_path_fragments = self._scores[self._scores_idx_max][0]
+        score_feature_next = self._scores[self._scores_idx_max][1]
+        score_text = self._scores[self._scores_idx_max][2]
+
+        self.result = Result(
+            name='pagination',
+            score=score,
+            scores={
+                'url_path_fragments': score_url_path_fragments,
+                'feature_next': score_feature_next,
+                'text': score_text,
+            },
+            selectors={
+                'next': next_selector,
+            },
+        )
 
     def run(self):
         self._pre_process()
@@ -206,12 +223,12 @@ class PaginationDetector(BaseDetector):
 if __name__ == '__main__':
     urls = [
         # 'https://www.baidu.com/s?wd=crawlab',
-        'https://github.com/search?q=spider',
+        # 'https://github.com/search?q=spider',
         # 'https://www.bing.com/search?q=crawlab&form=QBLHCN&sp=-1&lq=0&pq=&sc=0-0&qs=n&sk=&cvid=BB20795C2CB64FCFBC5A0B69070A11AA&ghsh=0&ghacc=0&ghpl=',
         # 'https://www.bing.com/search?q=crawlab&sp=-1&lq=0&pq=&sc=0-0&qs=n&sk=&cvid=BB20795C2CB64FCFBC5A0B69070A11AA&ghsh=0&ghacc=0&ghpl=&first=11&FORM=PORE',
         # 'https://github.com/trending',
         # 'https://github.com/crawlab-team/crawlab/actions',
-        # 'https://quotes.toscrape.com',
+        'https://quotes.toscrape.com',
         # 'https://quotes.toscrape.com/page/2/',
         # 'https://books.toscrape.com',
         # 'https://cuiqingcai.com/archives/',

@@ -1,7 +1,8 @@
-from typing import Optional
+from typing import Optional, List
 from urllib.parse import urlparse
 
 import numpy as np
+from bs4 import BeautifulSoup
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import normalize
@@ -9,6 +10,7 @@ from sklearn.preprocessing import normalize
 from webspot.detect.detectors.base import BaseDetector
 from webspot.detect.models.result import Result
 from webspot.detect.models.selector import Selector
+from webspot.detect.utils.highlight_html import add_class, add_label
 from webspot.detect.utils.transform_html_links import transform_url
 from webspot.detect.utils.url import get_url_domain
 from webspot.graph.graph_loader import GraphLoader
@@ -49,8 +51,18 @@ class PaginationDetector(BaseDetector):
         self._scores_idx = None
         self._scores_idx_max = None
 
-        # result
-        self.result: Optional[Result] = None
+    def highlight_html(self, html: str, **kwargs) -> str:
+        soup = BeautifulSoup(html, 'html.parser')
+
+        if len(self.results) == 0:
+            return html
+
+        result = self.results[0]
+        next_selector = result.selectors.get('next')
+        next_el = soup.select_one(next_selector.selector)
+
+        add_class(next_el, ['webspot-highlight-container', 'webspot-highlight-node-color__red'])
+        add_label(next_el, soup, f'Pagination', 'primary')
 
     @property
     def root_url(self):
@@ -193,7 +205,7 @@ class PaginationDetector(BaseDetector):
         score_feature_next = self._scores[self._scores_idx_max][1]
         score_text = self._scores[self._scores_idx_max][2]
 
-        self.result = Result(
+        self.results.append(Result(
             name='pagination',
             score=score,
             scores={
@@ -204,7 +216,7 @@ class PaginationDetector(BaseDetector):
             selectors={
                 'next': next_selector,
             },
-        )
+        ))
 
     def run(self):
         self._pre_process()
@@ -217,7 +229,7 @@ class PaginationDetector(BaseDetector):
 
         self._extract()
 
-        return self.result
+        return self.results
 
 
 if __name__ == '__main__':
@@ -245,5 +257,5 @@ if __name__ == '__main__':
         pagination_detector = PaginationDetector(html_requester=html_requester, graph_loader=graph_loader)
         pagination_detector.run()
         print(url)
-        print(pagination_detector.result)
+        print(pagination_detector.results)
         print('\n\n')

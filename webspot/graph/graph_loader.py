@@ -1,5 +1,5 @@
 import json
-from typing import List, Tuple, Dict, Union
+from typing import List, Tuple, Dict, Optional
 
 import dgl
 import html_to_json_enhanced
@@ -43,7 +43,7 @@ class GraphLoader(object):
         # internals
         self._nodes_dict = {}
         self._css_selector_repr_cache = {}
-        self._unique_node_feature_id_dict: Union[dict, None] = None
+        self._unique_node_feature_id_dict: Optional[dict] = None
 
         # encoders
         self.nodes_features_enc = DictVectorizer()
@@ -148,7 +148,7 @@ class GraphLoader(object):
         return features
 
     @staticmethod
-    def _get_node_text(node_json_data: dict) -> Union[str, None]:
+    def _get_node_text(node_json_data: dict) -> Optional[str]:
         if node_json_data.get('_text') is not None:
             return node_json_data.get('_text')
 
@@ -199,7 +199,7 @@ class GraphLoader(object):
     def nodes(self):
         return np.array(self.nodes_)
 
-    def get_node_by_id(self, id: int) -> Union[Node, None]:
+    def get_node_by_id(self, id: int) -> Optional[Node]:
         return self.nodes_dict.get(id)
 
     def get_nodes_by_ids(self, ids: List[int]) -> List[Node]:

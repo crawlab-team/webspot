@@ -1,4 +1,4 @@
-from typing import Tuple, List, Dict, Union
+from typing import Tuple, List, Dict, Optional
 
 
 class Node(dict):
@@ -26,7 +26,7 @@ class Node(dict):
         return {f'{k}={v}': 1 for k, v in self.features}
 
     @property
-    def feature_tag(self) -> Union[str, None]:
+    def feature_tag(self) -> Optional[str]:
         for k, v in self.features:
             if k == 'tag':
                 return v
@@ -41,7 +41,7 @@ class Node(dict):
         return classes
 
     @property
-    def feature_id(self) -> Union[str, None]:
+    def feature_id(self) -> Optional[str]:
         for k, v in self.features:
             if k == 'id':
                 return v

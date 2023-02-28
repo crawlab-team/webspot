@@ -67,28 +67,28 @@ class PlainListDetector(BaseDetector):
     def url(self):
         return self.html_requester.url
 
-    def highlight_html(self, html) -> str:
+    def highlight_html(self, html: str, **kwargs) -> str:
         soup = BeautifulSoup(html, 'html.parser')
         for i, result in enumerate(self.results):
             # list
-            list_rule = result.extract_rules.get('list')
-            list_el = soup.select_one(list_rule)
+            list_selector = result.selectors.get('list')
+            list_el = soup.select_one(list_selector.selector)
             if not list_el:
                 continue
             add_class(list_el, ['webspot-highlight-container', 'webspot-highlight-node-color__blue'])
             add_label(list_el, soup, f'List {i + 1}', 'primary')
 
             # items
-            items_rule = result.extract_rules.get('items')
-            item_els = list_el.select(items_rule)
+            items_selector = result.selectors.get('items')
+            item_els = list_el.select(items_selector.selector)
             for j, item_el in enumerate(item_els):
                 add_class(item_el, ['webspot-highlight-container', 'webspot-highlight-node-color__orange'])
                 # _add_label(item_el, soup, f'Item {j + 1}', 'warning')
 
                 # fields
-                for k, field in enumerate(result.extract_rules.get('fields')):
+                for k, field in enumerate(result.fields):
                     try:
-                        field_els = item_el.select(field.get('selector'))
+                        field_els = item_el.select(field.selector)
                     except Exception as e:
                         # logging.warning(e)
                         field_els = []
@@ -99,7 +99,7 @@ class PlainListDetector(BaseDetector):
 
     @property
     def html(self):
-        return self.highlight_html(self._html)
+        return self.highlight_html(self._html, )
 
     @property
     def html_base64(self):

@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import Union
+from typing import Optional
 from urllib.parse import urlparse
 
 import html_to_json_enhanced
@@ -36,9 +36,9 @@ class HtmlRequester(object):
         self.save = save
 
         # data
-        self.html_: Union[str, None] = None
-        self.html_response: Union[Response, None] = None
-        self.json_data: Union[dict, None] = None
+        self.html_: Optional[str] = None
+        self.html_response: Optional[Response] = None
+        self.json_data: Optional[dict] = None
 
         # logger
         self.logger = logging.getLogger('webspot.request.html_requester')

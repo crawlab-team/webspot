@@ -7,13 +7,14 @@ from webspot.constants.detector import DETECTOR_PLAIN_LIST, DETECTOR_PAGINATION
 from webspot.constants.request_status import REQUEST_STATUS_SUCCESS, REQUEST_STATUS_ERROR
 from webspot.detect.detectors.pagination import PaginationDetector
 from webspot.detect.detectors.plain_list import PlainListDetector
+from webspot.detect.utils.highlight_html import embed_highlight_css
+from webspot.detect.utils.transform_html_links import transform_html_links
 from webspot.graph.graph_loader import GraphLoader
 from webspot.models.request import Request
 from webspot.request.html_requester import HtmlRequester
 from webspot.web.app import app
 from webspot.web.logging import logger
 from webspot.web.models.payload.request import RequestPayload
-from webspot.web.models.response.request import RequestResponse
 
 
 @app.get('/api/requests')
@@ -47,7 +48,7 @@ async def request(payload: RequestPayload = Body(
         'no_async': False,
         'detectors': ['plain_list', 'pagination'],
     }
-)) -> RequestResponse:
+)):
     """Create a request. This is used to generate a new request to detect a web page."""
     d = Request(
         url=payload.url,
@@ -86,8 +87,8 @@ def _run_request(d: Request):
         graph_loader.run()
 
         # run detectors
-        html = html_requester.html_
-        for detector_name in request.detectors:
+        html = html_requester.html
+        for detector_name in d.detectors:
             # detector class
             if detector_name == DETECTOR_PLAIN_LIST:
                 detector_cls = PlainListDetector
@@ -107,7 +108,10 @@ def _run_request(d: Request):
             html = detector.highlight_html(html)
 
             # add to results
-            d.results[detector_name] = detector.results
+            d.results[detector_name] = [r.dict() for r in detector.results]
+
+        # embed highlight css
+        html = embed_highlight_css(html)
 
         # update request
         d.status = REQUEST_STATUS_SUCCESS

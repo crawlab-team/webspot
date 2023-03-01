@@ -64,6 +64,8 @@ class PaginationDetector(BaseDetector):
         add_class(next_el, ['webspot-highlight-container', 'webspot-highlight-node-color__red'])
         add_label(next_el, soup, f'Pagination', 'primary')
 
+        return str(soup)
+
     @property
     def root_url(self):
         return self.html_requester.url

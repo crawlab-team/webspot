@@ -1,6 +1,6 @@
 import ListDialog from './list-dialog.js';
 
-const {ref, computed, onBeforeMount} = Vue;
+const {ref, computed} = Vue;
 const {useStore} = Vuex;
 
 export default {
@@ -30,6 +30,45 @@ export default {
 
     const activeResult = ref({});
 
+    const resultsTree = computed(() => {
+      const res = Object.keys(activeRequestResults.value).map((key) => {
+        const value = activeRequestResults.value[key];
+        if (Array.isArray(value)) {
+          const label = key;
+          const children = value.map((item) => {
+            return {
+              label: item.name,
+              ...item,
+            };
+          });
+          return {
+            label,
+            children,
+          };
+        } else {
+          return {
+            label: key,
+            ...value,
+          };
+        }
+      });
+      return res;
+    });
+
+    const getIcon = (data) => {
+      console.debug(data);
+      if (data.children) {
+        switch (data.label) {
+          case 'pagination':
+            return 'fa fa-compass';
+          case 'plain_list':
+            return 'fa fa-list';
+        }
+      } else {
+        return 'fa fa-circle-o';
+      }
+    };
+
     return {
       activeRequestResults,
       isCollapsed,
@@ -38,31 +77,32 @@ export default {
       dialogVisible,
       onDialogClose,
       activeResult,
+      resultsTree,
+      getIcon,
     };
   },
   template: `<div class="nav-sidebar" :style="{flexBasis: isCollapsed ? 'auto' : '240px'}">
-  <el-menu :collapse="isCollapsed" style="height: 100%">
-    <el-menu-item style="background: inherit">
-      <h3>Detected Results:</h3>
-    </el-menu-item>
-    <el-menu-item v-for="(result, $index) in activeRequestResults" :key="$index" :index="$index" @click="() => onClickList(result)">
-      <el-icon>
-        <i class="fa fa-circle-o"></i>
-      </el-icon>
-      <span>{{ result.name }}</span>
-      <el-tag type="primary" style="margin-left: 10px;">
-        <span class="score">{{ result.stats.score.toFixed(2) }}</span>
-        <span class="count"> ({{ result.nodes.items.length }})</span>
-      </el-tag>
-    </el-menu-item>
-    <el-menu-item style="border-top: solid 1px var(--el-menu-border-color); position: absolute; bottom: 0; width: 100%" @click="onToggle">
-      <el-icon>
-        <DArrowRight v-if="isCollapsed"/>
-        <DArrowLeft v-else/>
-      </el-icon>
-      <span>{{ isCollapsed ? 'Expand' : 'Collapse' }}</span>
-    </el-menu-item>
-  </el-menu>
+  <h2 style="padding: 0 12px; height: 56px; margin: 0; display: flex; align-items: center">Detected Results</h2>
+  <el-tree :data="resultsTree" :props="{class:'item-node'}" default-expand-all>
+    <template v-slot="{node, data}">
+      <div
+       style="height: 100%; display: flex; align-items: center"
+        :style="{fontSize: data.children ? '16px' : '14px', fontWeight: data.children ? 'bolder' : 'normal'}"
+        @click="() => onClickList(data)"
+      >
+        <el-icon size="16px">
+          <i :class="getIcon(data)"></i>
+        </el-icon>
+        <span style="margin-left: 8px">
+          {{ node.label }}
+        </span>
+        <span v-if="data.children" style="margin-left: 3px">({{ data.children.length }})</span>
+        <el-tag v-if="data.score !== undefined" type="primary" style="margin-left: 10px;">
+          <span class="score">{{ data.score.toFixed(2) }}</span>
+        </el-tag>
+      </div>
+    </template>
+  </el-tree>
 
   <list-dialog :visible="dialogVisible" :result="activeResult" @close="onDialogClose"/>
 </div>

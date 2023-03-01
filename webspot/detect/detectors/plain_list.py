@@ -18,7 +18,7 @@ from webspot.detect.detectors.base import BaseDetector
 from webspot.detect.models.selector import Selector
 from webspot.detect.utils.math import log_positive
 from webspot.detect.utils.node import get_node_inner_text
-from webspot.detect.utils.highlight_html import highlight_html, add_class, add_label
+from webspot.detect.utils.highlight_html import add_class, add_label
 from webspot.detect.models.list_result import ListResult
 from webspot.graph.graph_loader import GraphLoader
 from webspot.graph.models.node import Node
@@ -37,6 +37,7 @@ class PlainListDetector(BaseDetector):
         item_nodes_samples: int = 5,
         node2vec_ratio: float = 1.,
         text_length_discount: float = 1e-2,
+        result_name_prefix: str = 'List',
         *args,
         **kwargs,
     ):
@@ -48,6 +49,7 @@ class PlainListDetector(BaseDetector):
         self.item_nodes_samples = item_nodes_samples
         self.node2vec_ratio = node2vec_ratio
         self.text_length_discount = text_length_discount
+        self.result_name_prefix = result_name_prefix
 
         # dbscan model
         self.dbscan = DBSCAN(
@@ -311,7 +313,10 @@ class PlainListDetector(BaseDetector):
                 # logging.warning(f'ValueError: {e}')
                 pass
 
-        return np.array(list_node_list)[idx].tolist(), np.array(item_nodes_list)[idx].tolist(), score_list, scores_list
+        res_list_node_list = [list_node_list[i] for i in idx]
+        res_item_nodes_list = [item_nodes_list[i] for i in idx]
+
+        return res_list_node_list, res_item_nodes_list, score_list, scores_list
 
     def _extract(
         self,
@@ -385,8 +390,8 @@ class PlainListDetector(BaseDetector):
         results = sorted(results, key=lambda x: x.score, reverse=True)
 
         # assign name
-        for i, result in enumerate(self.results):
-            results[i].name = f'List {i + 1}'
+        for i, result in enumerate(results):
+            results[i].name = f'{self.result_name_prefix} {i + 1}'
 
         return results
 
@@ -422,9 +427,9 @@ if __name__ == '__main__':
         # 'https://www.bing.com/search?q=crawlab&sp=-1&lq=0&pq=&sc=0-0&qs=n&sk=&cvid=BB20795C2CB64FCFBC5A0B69070A11AA&ghsh=0&ghacc=0&ghpl=&first=11&FORM=PORE',
         # 'https://github.com/trending',
         # 'https://github.com/crawlab-team/crawlab/actions',
-        'https://quotes.toscrape.com',
+        # 'https://quotes.toscrape.com',
         # 'https://quotes.toscrape.com/page/2/',
-        # 'https://books.toscrape.com',
+        'https://books.toscrape.com',
         # 'https://cuiqingcai.com/archives/',
         # 'https://cuiqingcai.com/archives/page/2/',
     ]

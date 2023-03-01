@@ -8,6 +8,7 @@ import html_to_json_enhanced
 import httpx
 from httpx import Timeout
 from requests import Response
+from retrying import retry
 
 from webspot.constants.html_request_method import HTML_REQUEST_METHOD_REQUEST, HTML_REQUEST_METHOD_ROD
 from webspot.detect.utils.transform_html_links import transform_html_links
@@ -42,6 +43,7 @@ class HtmlRequester(object):
         # logger
         self.logger = logging.getLogger('webspot.request.html_requester')
 
+    @retry(stop_max_attempt_number=3, wait_fixed=100)
     def _request_html(self):
         url = self.url
         request_method = self.request_method

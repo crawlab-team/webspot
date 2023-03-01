@@ -60,6 +60,15 @@ body {
 .nav-sidebar {
   max-width: 240px;
   overflow: hidden;
+  border-right: 1px solid var(--color-light-grey);
+}
+
+.nav-sidebar .el-tree .el-tree-node {
+  min-height: 56px;
+}
+
+.nav-sidebar .el-tree .el-tree-node__content {
+  min-height: 56px;
 }
 
 .preview-container {

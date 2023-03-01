@@ -16,8 +16,8 @@ export default {
     const activeTabName = ref('overview');
     const columns = computed(() => {
       if (!props.result) return [];
-      return props.result.extract_rules_css.fields.map(f => {
-        const {data} = props.result.extract_rules_css;
+      return props.result.fields.map(f => {
+        const {data} = props.result;
         // get all the data for each column
         const arr = data.map(d => d[f.name]).filter(d => d !== undefined);
         // add the label of each column
@@ -118,20 +118,20 @@ export default {
           </el-radio-group>
         </el-form-item>
         <el-form-item label="List">
-          <el-tag type="primary">{{ result.extract_rules_css.list }}</el-tag>
-          <el-icon style="margin-left:5px;cursor:pointer;" @click="() => onCopy(result.extract_rules_css.list)">
+          <el-tag type="primary">{{ result.selectors.list.selector }}</el-tag>
+          <el-icon style="margin-left:5px;cursor:pointer;" @click="() => onCopy(result.selectors.list.selector)">
             <i class="fa fa-paste"></i>
           </el-icon>
         </el-form-item>
         <el-form-item label="Items">
-          <el-tag type="primary">{{ result.extract_rules_css.items }}</el-tag>
-          <el-icon style="margin-left:5px;cursor:pointer;" @click="() => onCopy(result.extract_rules_css.items)">
+          <el-tag type="primary">{{ result.selectors.items.selector }}</el-tag>
+          <el-icon style="margin-left:5px;cursor:pointer;" @click="() => onCopy(result.selectors.items.selector)">
             <i class="fa fa-paste"></i>
           </el-icon>
         </el-form-item>
         <el-form-item label="Items (Full Path)">
-          <el-tag type="primary">{{ result.extract_rules_css.items_full }}</el-tag>
-          <el-icon style="margin-left:5px;cursor:pointer;" @click="() => onCopy(result.extract_rules_css.items_full)">
+          <el-tag type="primary">{{ result.selectors.items_full.selector }}</el-tag>
+          <el-icon style="margin-left:5px;cursor:pointer;" @click="() => onCopy(result.selectors.items_full.selector)">
             <i class="fa fa-paste"></i>
           </el-icon>
         </el-form-item>
@@ -139,7 +139,7 @@ export default {
     </el-tab-pane>
 
     <el-tab-pane label="Data" name="data">
-      <el-table v-if="result" :data="result.extract_rules_css.data" :cell-style="{padding: '5px 10px'}" border>
+      <el-table v-if="result" :data="result.data" :cell-style="{padding: '5px 10px'}" border>
         <el-table-column
           v-for="column in columns"
           :key="column.key"

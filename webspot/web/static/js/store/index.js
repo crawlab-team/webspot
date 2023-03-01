@@ -54,6 +54,9 @@ const store = createStore({
   actions: {
     async getRequests({commit, state}) {
       const res = await axios.get(`/api/requests`);
+      if (JSON.stringify(res.data) === JSON.stringify(state.requests)) {
+        return;
+      }
       commit('setRequests', res.data);
 
       // Set active request id if it's not set yet

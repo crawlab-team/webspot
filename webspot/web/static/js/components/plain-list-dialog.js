@@ -9,7 +9,7 @@ export default {
       type: Object,
       default: () => {
         return {};
-      },
+      }
     },
   },
   setup(props, {emit}) {
@@ -81,7 +81,7 @@ export default {
     };
   },
   template: `
-<el-dialog :title="result.name" v-model="dialogVisible" @close="onDialogClose" width="80%">
+<el-dialog v-if="result.detector === 'plain_list'" :title="result.name" v-model="dialogVisible" @close="onDialogClose" width="80%">
   <el-tabs v-model="activeTabName">
     <el-tab-pane label="Overview" name="overview">
       <el-form v-if="result" label-width="180px">
@@ -130,8 +130,8 @@ export default {
           </el-icon>
         </el-form-item>
         <el-form-item label="Items (Full Path)">
-          <el-tag type="primary">{{ result.selectors.items_full.selector }}</el-tag>
-          <el-icon style="margin-left:5px;cursor:pointer;" @click="() => onCopy(result.selectors.items_full.selector)">
+          <el-tag type="primary">{{ result.selectors.full_items.selector }}</el-tag>
+          <el-icon style="margin-left:5px;cursor:pointer;" @click="() => onCopy(result.selectors.full_items.selector)">
             <i class="fa fa-paste"></i>
           </el-icon>
         </el-form-item>

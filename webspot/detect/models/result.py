@@ -10,3 +10,4 @@ class Result(BaseModel):
     selectors: Optional[Dict[str, Selector]]
     score: Optional[float]
     scores: Optional[Dict[str, Optional[float]]]
+    detector: Optional[str]

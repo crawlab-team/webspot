@@ -7,6 +7,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import normalize
 
+from webspot.constants.detector import DETECTOR_PAGINATION
 from webspot.detect.detectors.base import BaseDetector
 from webspot.detect.models.result import Result
 from webspot.detect.models.selector import Selector
@@ -208,7 +209,7 @@ class PaginationDetector(BaseDetector):
         score_text = self._scores[self._scores_idx_max][2]
 
         self.results.append(Result(
-            name='pagination',
+            name='Next',
             score=score,
             scores={
                 'url_path_fragments': score_url_path_fragments,
@@ -218,6 +219,7 @@ class PaginationDetector(BaseDetector):
             selectors={
                 'next': next_selector,
             },
+            detector=DETECTOR_PAGINATION,
         ))
 
     def run(self):

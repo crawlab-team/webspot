@@ -1,4 +1,5 @@
-import ListDialog from './list-dialog.js';
+import PlainListDialog from './plain-list-dialog.js';
+import PaginationDialog from './pagination-dialog.js';
 
 const {ref, computed} = Vue;
 const {useStore} = Vuex;
@@ -6,7 +7,8 @@ const {useStore} = Vuex;
 export default {
   name: 'NavSidebar',
   components: {
-    ListDialog,
+    PlainListDialog,
+    PaginationDialog,
   },
   setup() {
     const store = useStore();
@@ -18,7 +20,8 @@ export default {
       isCollapsed.value = !isCollapsed.value;
     };
 
-    const onClickList = (result) => {
+    const onClickNode = (result) => {
+      if (result.children) return;
       activeResult.value = result;
       dialogVisible.value = true;
     };
@@ -56,7 +59,6 @@ export default {
     });
 
     const getIcon = (data) => {
-      console.debug(data);
       if (data.children) {
         switch (data.label) {
           case 'pagination':
@@ -73,7 +75,7 @@ export default {
       activeRequestResults,
       isCollapsed,
       onToggle,
-      onClickList,
+      onClickNode,
       dialogVisible,
       onDialogClose,
       activeResult,
@@ -83,12 +85,11 @@ export default {
   },
   template: `<div class="nav-sidebar" :style="{flexBasis: isCollapsed ? 'auto' : '240px'}">
   <h2 style="padding: 0 12px; height: 56px; margin: 0; display: flex; align-items: center">Detected Results</h2>
-  <el-tree :data="resultsTree" :props="{class:'item-node'}" default-expand-all>
+  <el-tree :data="resultsTree" :props="{class:'item-node'}" default-expand-all @node-click="onClickNode">
     <template v-slot="{node, data}">
       <div
        style="height: 100%; display: flex; align-items: center"
         :style="{fontSize: data.children ? '16px' : '14px', fontWeight: data.children ? 'bolder' : 'normal'}"
-        @click="() => onClickList(data)"
       >
         <el-icon size="16px">
           <i :class="getIcon(data)"></i>
@@ -104,7 +105,18 @@ export default {
     </template>
   </el-tree>
 
-  <list-dialog :visible="dialogVisible" :result="activeResult" @close="onDialogClose"/>
+  <plain-list-dialog
+    v-show="activeResult.detector === 'plain_list'"
+    :visible="dialogVisible"
+    :result="activeResult"
+    @close="onDialogClose"
+   />
+  <pagination-dialog
+    v-show="activeResult.detector === 'pagination'"
+    :visible="dialogVisible"
+    :result="activeResult"
+    @close="onDialogClose"
+  />
 </div>
 `
 };

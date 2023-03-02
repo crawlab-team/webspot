@@ -12,6 +12,7 @@ from scipy.stats import entropy
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import normalize
 
+from webspot.constants.detector import DETECTOR_PLAIN_LIST
 from webspot.constants.field_extract_rule_type import FIELD_EXTRACT_RULE_TYPE_TEXT, FIELD_EXTRACT_RULE_TYPE_LINK_URL, \
     FIELD_EXTRACT_RULE_TYPE_IMAGE_URL
 from webspot.detect.detectors.base import BaseDetector
@@ -381,6 +382,7 @@ class PlainListDetector(BaseDetector):
                 scores=scores,
                 fields=fields_selectors,
                 data=data,
+                detector=DETECTOR_PLAIN_LIST,
             )
             results.append(result)
 

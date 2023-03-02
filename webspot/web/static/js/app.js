@@ -20,7 +20,7 @@ export default {
 
       setInterval(() => {
         store.dispatch(`getRequests`);
-      }, 15 * 1e3);
+      }, 5 * 1e3);
     });
 
     const isEmpty = computed(() => store.getters['isEmpty']);

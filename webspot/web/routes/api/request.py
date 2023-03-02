@@ -59,12 +59,12 @@ async def request(payload: RequestPayload = Body(
     d.save()
 
     if d.no_async:
+        # run request (sync)
+        d = _run_request(d)
+    else:
         # run request (async)
         t = threading.Thread(target=_run_request, args=[d])
         t.start()
-    else:
-        # run request (sync)
-        d = _run_request(d)
 
     return d.to_dict()
 

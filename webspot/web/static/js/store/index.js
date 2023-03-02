@@ -1,8 +1,10 @@
+const {h} = Vue;
 const {createStore} = Vuex;
+const {ElNotification} = ElementPlus;
 
 const defaultRequestForm = {
   method: 'request',
-  duration: 3,
+  no_async: false,
 };
 
 const store = createStore({
@@ -85,8 +87,19 @@ const store = createStore({
         commit('setActiveRequestId', res.data[0]._id);
       }
     },
-    async postRequest({commit, dispatch}, request) {
-      const res = await axios.post(`/api/requests`, {...request});
+    async postRequest({getters, commit, dispatch}, request) {
+      const res = await axios.post(`/api/requests`, {
+        ...getters.requestForm,
+        ...request,
+      });
+      await ElNotification({
+        title: 'Triggered request',
+        message: h('span', [
+          h('label', {}, ['URL: ']),
+          h('a', {href: `${request.url}`, target: '_blank'}, [request.url]),
+        ]),
+        type: 'info',
+      });
       await dispatch('getRequests');
 
       // Set result id as active

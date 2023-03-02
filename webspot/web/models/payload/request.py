@@ -26,7 +26,7 @@ class RequestPayload(BaseModel):
         title='Detectors',
         description='The detectors to run on the page.',
     )
-    duration: Union[int, None] = Field(
+    duration: Optional[int] = Field(
         default=3,
         title='Duration (seconds)',
         description='The duration to request the page (method "rod" only)',

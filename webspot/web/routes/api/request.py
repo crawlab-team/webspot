@@ -1,38 +1,40 @@
 import threading
 import traceback
 
-from fastapi import Request, Body, Path
-from pydantic import Field
+from fastapi import Body
 
+from webspot.constants.detector import DETECTOR_PLAIN_LIST, DETECTOR_PAGINATION
 from webspot.constants.request_status import REQUEST_STATUS_SUCCESS, REQUEST_STATUS_ERROR
+from webspot.detect.detectors.pagination import PaginationDetector
 from webspot.detect.detectors.plain_list import PlainListDetector
+from webspot.detect.utils.highlight_html import embed_highlight_css
+from webspot.detect.utils.transform_html_links import transform_html_links
 from webspot.graph.graph_loader import GraphLoader
-from webspot.models.request import Request as RequestModel
+from webspot.models.request import Request
 from webspot.request.html_requester import HtmlRequester
 from webspot.web.app import app
 from webspot.web.logging import logger
 from webspot.web.models.payload.request import RequestPayload
-from webspot.web.models.response.request import RequestResponse
 
 
 @app.get('/api/requests')
 async def requests():
     """Get all requests."""
-    docs = RequestModel.objects().order_by('-_id')
+    docs = Request.objects().order_by('-_id')
     return [d.to_dict() for d in docs]
 
 
 @app.get('/api/requests/{id}')
 async def request(id: str):
     """Get a request."""
-    d = RequestModel.objects(pk=id).first()
+    d = Request.objects(pk=id).first()
     return d.to_dict()
 
 
 @app.put('/api/requests/{id}')
 async def request(id: str):
     """Update a request."""
-    d = RequestModel.objects(pk=id).first()
+    d = Request.objects(pk=id).first()
     _d = await request.json()
     d.update(_d)
     return d.to_dict()
@@ -44,13 +46,15 @@ async def request(payload: RequestPayload = Body(
         'url': 'https://quotes.toscrape.com',
         'method': 'request',
         'no_async': False,
+        'detectors': ['plain_list', 'pagination'],
     }
-)) -> RequestResponse:
+)):
     """Create a request. This is used to generate a new request to detect a web page."""
-    d = RequestModel(
+    d = Request(
         url=payload.url,
         method=payload.method,
         no_async=payload.no_async,
+        detectors=payload.detectors,
     )
     d.save()
 
@@ -65,7 +69,7 @@ async def request(payload: RequestPayload = Body(
     return d.to_dict()
 
 
-def _run_request(d: RequestModel):
+def _run_request(d: Request):
     try:
         # html requester
         html_requester = HtmlRequester(
@@ -77,23 +81,42 @@ def _run_request(d: RequestModel):
 
         # graph loader
         graph_loader = GraphLoader(
-            html=html_requester.html,
+            html=html_requester.html_,
             json_data=html_requester.json_data,
         )
         graph_loader.run()
 
-        # detector
-        detector = PlainListDetector(
-            graph_loader=graph_loader,
-            html_requester=html_requester,
-        )
-        detector.run()
+        # run detectors
+        html = html_requester.html
+        for detector_name in d.detectors:
+            # detector class
+            if detector_name == DETECTOR_PLAIN_LIST:
+                detector_cls = PlainListDetector
+            elif detector_name == DETECTOR_PAGINATION:
+                detector_cls = PaginationDetector
+            else:
+                raise Exception(f'Invalid detector: {detector_name}')
+
+            # run detector
+            detector = detector_cls(
+                graph_loader=graph_loader,
+                html_requester=html_requester,
+            )
+            detector.run()
+
+            # highlight html
+            html = detector.highlight_html(html)
+
+            # add to results
+            d.results[detector_name] = [r.dict() for r in detector.results]
+
+        # embed highlight css
+        html = embed_highlight_css(html)
 
         # update request
         d.status = REQUEST_STATUS_SUCCESS
-        d.html = html_requester.html
-        d.html_highlighted = detector.html
-        d.results = detector.results
+        d.html = html_requester.html_
+        d.html_highlighted = html
         d.save()
 
     except Exception as e:

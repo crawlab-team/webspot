@@ -2,7 +2,7 @@ import base64
 import json
 import logging
 import time
-from typing import List, Set
+from typing import List, Set, Dict
 from urllib.parse import urljoin
 
 import numpy as np
@@ -12,22 +12,24 @@ from scipy.stats import entropy
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import normalize
 
+from webspot.constants.detector import DETECTOR_PLAIN_LIST
 from webspot.constants.field_extract_rule_type import FIELD_EXTRACT_RULE_TYPE_TEXT, FIELD_EXTRACT_RULE_TYPE_LINK_URL, \
     FIELD_EXTRACT_RULE_TYPE_IMAGE_URL
+from webspot.detect.detectors.base import BaseDetector
+from webspot.detect.models.selector import Selector
 from webspot.detect.utils.math import log_positive
 from webspot.detect.utils.node import get_node_inner_text
-from webspot.graph.graph_loader import GraphLoader
-from webspot.detect.utils.highlight_html import highlight_html
-from webspot.detect.models.field import Field
+from webspot.detect.utils.highlight_html import add_class, add_label
 from webspot.detect.models.list_result import ListResult
+from webspot.graph.graph_loader import GraphLoader
+from webspot.graph.models.node import Node
 from webspot.request.html_requester import HtmlRequester
+from webspot.web.logging import logger
 
 
-class PlainListDetector(object):
+class PlainListDetector(BaseDetector):
     def __init__(
         self,
-        graph_loader: GraphLoader,
-        html_requester: HtmlRequester,
         dbscan_eps: float = 0.5,
         dbscan_min_samples: int = 3,
         dbscan_metric: str = 'euclidean',
@@ -36,19 +38,19 @@ class PlainListDetector(object):
         item_nodes_samples: int = 5,
         node2vec_ratio: float = 1.,
         text_length_discount: float = 1e-2,
+        result_name_prefix: str = 'List',
+        *args,
+        **kwargs,
     ):
+        super().__init__(*args, **kwargs)
+
         # settings
         self.entropy_threshold = entropy_threshold
         self.score_threshold = score_threshold
         self.item_nodes_samples = item_nodes_samples
         self.node2vec_ratio = node2vec_ratio
         self.text_length_discount = text_length_discount
-
-        # graph loader
-        self.graph_loader = graph_loader
-
-        # html requester
-        self.html_requester = html_requester
+        self.result_name_prefix = result_name_prefix
 
         # dbscan model
         self.dbscan = DBSCAN(
@@ -68,9 +70,39 @@ class PlainListDetector(object):
     def url(self):
         return self.html_requester.url
 
+    def highlight_html(self, html: str, **kwargs) -> str:
+        soup = BeautifulSoup(html, 'html.parser')
+        for i, result in enumerate(self.results):
+            # list
+            list_selector = result.selectors.get('list')
+            list_el = soup.select_one(list_selector.selector)
+            if not list_el:
+                continue
+            add_class(list_el, ['webspot-highlight-container', 'webspot-highlight-node-color__blue'])
+            add_label(list_el, soup, f'List {i + 1}', 'primary')
+
+            # items
+            items_selector = result.selectors.get('items')
+            item_els = list_el.select(items_selector.selector)
+            for j, item_el in enumerate(item_els):
+                add_class(item_el, ['webspot-highlight-container', 'webspot-highlight-node-color__orange'])
+                # _add_label(item_el, soup, f'Item {j + 1}', 'warning')
+
+                # fields
+                for k, field in enumerate(result.fields):
+                    try:
+                        field_els = item_el.select(field.selector)
+                    except Exception as e:
+                        # logging.warning(e)
+                        field_els = []
+                    for field_el in field_els:
+                        add_class(field_el, ['webspot-highlight-container', 'webspot-highlight-node-color__green'])
+                        # _add_label(field_el, soup, f'Field {k + 1}', 'success')
+        return str(soup)
+
     @property
     def html(self):
-        return highlight_html(self._html, self.results)
+        return self.highlight_html(self._html, )
 
     @property
     def html_base64(self):
@@ -128,9 +160,9 @@ class PlainListDetector(object):
             axis=1,
         )
 
-    def _extract_fields_by_id(self, list_id: int) -> List[Field]:
+    def _extract_fields_by_id(self, list_id: int) -> List[Selector]:
         # fields
-        fields: List[Field] = []
+        fields: List[Selector] = []
 
         # extract rules set (css selector path, type, attribute)
         fields_extract_rules_set: Set[(str, str)] = set()
@@ -170,15 +202,15 @@ class PlainListDetector(object):
         for i, item in enumerate(fields_extract_rules_set):
             extract_rule_css, type_, attribute = item
             name = f'Field_{type_}_{i + 1}'
-            fields.append(Field({
-                'name': name,
-                'selector': extract_rule_css,
-                'type': type_,
-                'attribute': attribute,
-            }))
+            fields.append(Selector(
+                name=name,
+                selector=extract_rule_css,
+                type=type_,
+                attribute=attribute,
+            ))
         return fields
 
-    def _extract_data(self, soup: BeautifulSoup, items_selector_full: str, fields: List[Field]):
+    def _extract_data(self, soup: BeautifulSoup, items_selector_full: str, fields: List[Selector]):
         data = []
         for item_el in soup.select(items_selector_full):
             row = {}
@@ -202,7 +234,7 @@ class PlainListDetector(object):
     def _train(self):
         self.dbscan.fit(self._get_nodes_features())
 
-    def _pre_filter(self):
+    def _pre_filter(self) -> (List[Node], List[List[Node]]):
         df_nodes = pd.DataFrame({
             'id': [n.id for n in self.graph_loader.nodes_],
             'parent_id': [n.parent_id for n in self.graph_loader.nodes_],
@@ -219,104 +251,151 @@ class PlainListDetector(object):
         threshold_mask = df_labels.entropy < self.entropy_threshold
         df_labels_filtered = df_labels[threshold_mask]
 
+        item_nodes_list = []
+        list_node_list = []
         for label in df_labels_filtered.index:
             # item node ids
             item_nodes_ids = df_nodes[df_nodes.label == label].id.values
 
             # item nodes
             item_nodes = self.graph_loader.get_nodes_by_ids(item_nodes_ids)
+            item_nodes_list.append(item_nodes)
 
             # list node
             list_node = self.graph_loader.get_node_by_id(item_nodes[0].parent_id)
+            list_node_list.append(list_node)
 
-            # entropy
-            entropy_ = df_labels.loc[label].entropy
+        return list_node_list, item_nodes_list
 
-            # add to result
-            self.results.append(
-                ListResult({
-                    'nodes': {
-                        'list': list_node,
-                        'items': item_nodes,
-                    },
-                    'stats': {
-                        'entropy': entropy_,
-                    },
-                }),
-            )
-
-    def _filter(self):
-        for i, result in enumerate(self.results):
-            nodes_ids = np.array([n.id for n in result.item_nodes])
+    def _filter(
+        self,
+        list_node_list: List[Node],
+        item_nodes_list: List[List[Node]],
+    ) -> (List[Node], List[List[Node]], List[float], List[Dict[str, float]]):
+        score_list = []
+        scores_list = []
+        idx: List[int] = []
+        for i, list_node, item_nodes in zip(range(len(list_node_list)), list_node_list, item_nodes_list):
+            nodes_ids = np.array([n.id for n in item_nodes])
             nodes_idx = np.argwhere(np.isin(self.graph_loader.nodes_ids, nodes_ids))
 
-            score = 0
-            scores = {}
             try:
                 nodes_features_vec = self._get_nodes_features(nodes_idx)
                 nodes_features_vec_norm = normalize(nodes_features_vec.sum(axis=0).reshape(1, -1), norm='l1')
 
-                # score
+                # scores
                 score_text_richness = log_positive(
                     np.array([(len(get_node_inner_text(self.graph_loader, n)) * self.text_length_discount)
-                              for n in result.item_nodes]).sum())
+                              for n in item_nodes]).sum())
                 score_complexity = float(entropy(nodes_features_vec_norm, axis=1)[0])
-                score_item_count = log_positive(len(result.item_nodes))
+                score_item_count = log_positive(len(item_nodes))
+
+                # score
                 score = score_text_richness * score_complexity * score_item_count
-                scores = {
+
+                # skip score less than threshold
+                if score < self.score_threshold:
+                    continue
+
+                # add to scores list
+                scores_list.append({
                     'text_richness': score_text_richness,
                     'complexity': score_complexity,
                     'item_count': score_item_count,
-                }
+                })
+
+                # add to score list
+                score_list.append(score)
+
+                # add to idx
+                idx.append(i)
 
             except ValueError as e:
                 # logging.warning(f'ValueError: {e}')
                 pass
 
-            self.results[i]['stats']['score'] = float(score)
-            self.results[i]['stats']['scores'] = scores
+        res_list_node_list = [list_node_list[i] for i in idx]
+        res_item_nodes_list = [item_nodes_list[i] for i in idx]
 
-        self.results = [r for r in self.results if r.stats.score > self.score_threshold]
+        return res_list_node_list, res_item_nodes_list, score_list, scores_list
 
-    def _sort(self):
-        self.results = sorted(self.results, key=lambda x: x.stats.score, reverse=True)
-
-        # assign name
-        for i, result in enumerate(self.results):
-            self.results[i]['name'] = f'List {i + 1}'
-
-    def _extract(self):
+    def _extract(
+        self,
+        list_node_list: List[Node],
+        item_nodes_list: List[List[Node]],
+        score_list: List[float],
+        scores_list: List[Dict[str, float]],
+    ) -> List[ListResult]:
+        # soup
         soup = BeautifulSoup(self._html, features='lxml')
 
-        for i, result in enumerate(self.results):
+        # results
+        results = []
+
+        # iterate inputs
+        for i, list_node, item_nodes, score, scores in zip(range(len(list_node_list)),
+                                                           list_node_list,
+                                                           item_nodes_list,
+                                                           score_list,
+                                                           scores_list):
             # list node
-            list_node = result.list_node
+            list_node = list_node
 
             # item nodes
-            item_nodes = result.item_nodes
+            item_nodes = item_nodes
 
-            # list node extract rule (css)
-            list_node_extract_rule_css = self.graph_loader.get_node_css_selector_path(list_node)
+            # list selector
+            list_selector = Selector(
+                name='list',
+                selector=self.graph_loader.get_node_css_selector_path(list_node),
+                type='css',
+            )
 
             # items node extract rule (css)
-            items_node_extract_rule_css = self.graph_loader.get_node_css_selector_repr(item_nodes[0], False)
+            items_selector = Selector(
+                name='items',
+                selector=self.graph_loader.get_node_css_selector_repr(item_nodes[0], False),
+                type='css',
+            )
 
             # items node full extract rule (css)
-            items_node_extract_rule_css_full = f'{list_node_extract_rule_css} > {items_node_extract_rule_css}'
+            full_items_selector = Selector(
+                name='items',
+                selector=f'{list_selector.selector} > {items_selector.selector}',
+                type='css',
+            )
 
             # fields node extract rule
-            fields_node_extract_rule_css = self._extract_fields_by_id(list_node.id)
+            fields_selectors = self._extract_fields_by_id(list_node.id)
 
             # data
-            data = self._extract_data(soup, items_node_extract_rule_css_full, fields_node_extract_rule_css)
+            data = self._extract_data(soup, full_items_selector.selector, fields_selectors)
 
-            self.results[i]['extract_rules_css'] = {
-                'list': list_node_extract_rule_css,
-                'items': items_node_extract_rule_css,
-                'items_full': items_node_extract_rule_css_full,
-                'fields': fields_node_extract_rule_css,
-                'data': data,
-            }
+            # result
+            result = ListResult(
+                selectors={
+                    'list': list_selector,
+                    'items': items_selector,
+                    'full_items': full_items_selector,
+                },
+                score=score,
+                scores=scores,
+                fields=fields_selectors,
+                data=data,
+                detector=DETECTOR_PLAIN_LIST,
+            )
+            results.append(result)
+
+        return results
+
+    def _sort(self, results: List[ListResult]) -> List[ListResult]:
+        results = sorted(results, key=lambda x: x.score, reverse=True)
+
+        # assign name
+        for i, result in enumerate(results):
+            results[i].name = f'{self.result_name_prefix} {i + 1}'
+
+        return results
 
     def run(self):
         tic = time.time()
@@ -325,18 +404,47 @@ class PlainListDetector(object):
         self._train()
 
         # pre-filter nodes
-        self._pre_filter()
+        res = self._pre_filter()
 
         # filter nodes
-        self._filter()
-
-        # sort results
-        self._sort()
+        res = self._filter(*res)
 
         # extract fields into results
-        self._extract()
+        results = self._extract(*res)
+
+        # sort results
+        self.results = self._sort(results)
 
         toc = time.time()
-        logging.info(f'PlainListExtractor: {toc - tic:.2f}s')
+        logger.debug(f'PlainListExtractor: {toc - tic:.2f}s')
 
         return self.results
+
+
+if __name__ == '__main__':
+    urls = [
+        # 'https://www.baidu.com/s?wd=crawlab',
+        # 'https://github.com/search?q=spider',
+        # 'https://www.bing.com/search?q=crawlab&form=QBLHCN&sp=-1&lq=0&pq=&sc=0-0&qs=n&sk=&cvid=BB20795C2CB64FCFBC5A0B69070A11AA&ghsh=0&ghacc=0&ghpl=',
+        # 'https://www.bing.com/search?q=crawlab&sp=-1&lq=0&pq=&sc=0-0&qs=n&sk=&cvid=BB20795C2CB64FCFBC5A0B69070A11AA&ghsh=0&ghacc=0&ghpl=&first=11&FORM=PORE',
+        # 'https://github.com/trending',
+        # 'https://github.com/crawlab-team/crawlab/actions',
+        # 'https://quotes.toscrape.com',
+        # 'https://quotes.toscrape.com/page/2/',
+        'https://books.toscrape.com',
+        # 'https://cuiqingcai.com/archives/',
+        # 'https://cuiqingcai.com/archives/page/2/',
+    ]
+
+    for url in urls:
+        html_requester = HtmlRequester(url=url, request_method='request')
+        html_requester.run()
+
+        graph_loader = GraphLoader(html=html_requester.html_, json_data=html_requester.json_data)
+        graph_loader.run()
+
+        plain_list_detector = PlainListDetector(html_requester=html_requester, graph_loader=graph_loader)
+        plain_list_detector.run()
+        print(url)
+        print(plain_list_detector.results)
+        print('\n\n')

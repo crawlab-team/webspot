@@ -1,18 +1,20 @@
 import json
 import logging
 import os
-from typing import Union
+from typing import Optional
 from urllib.parse import urlparse
 
 import html_to_json_enhanced
 import httpx
+from httpx import Timeout
 from requests import Response
+from retrying import retry
 
 from webspot.constants.html_request_method import HTML_REQUEST_METHOD_REQUEST, HTML_REQUEST_METHOD_ROD
 from webspot.detect.utils.transform_html_links import transform_html_links
 
 DEFAULT_REQUEST_ROD_URL = 'http://localhost:7777/request'
-DEFAULT_REQUEST_ROD_DURATION = 3
+DEFAULT_REQUEST_ROD_DURATION = 10
 DEFAULT_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data'))
 
 
@@ -35,13 +37,14 @@ class HtmlRequester(object):
         self.save = save
 
         # data
-        self.html_: Union[str, None] = None
-        self.html_response: Union[Response, None] = None
-        self.json_data: Union[dict, None] = None
+        self.html_: Optional[str] = None
+        self.html_response: Optional[Response] = None
+        self.json_data: Optional[dict] = None
 
         # logger
         self.logger = logging.getLogger('webspot.request.html_requester')
 
+    @retry(stop_max_attempt_number=3, wait_fixed=100)
     def _request_html(self):
         url = self.url
         request_method = self.request_method
@@ -55,7 +58,7 @@ class HtmlRequester(object):
             # request rod (headless browser)
             res = httpx.post(
                 request_rod_url,
-                data={'url': url, 'duration': request_rod_duration},
+                json={'url': url, 'duration': request_rod_duration},
                 headers={'Content-Type': 'application/json'},
             )
             if res.status_code != 200:
@@ -64,7 +67,7 @@ class HtmlRequester(object):
             self.html_ = json.loads(res.content.decode('utf-8')).get('html')
         elif request_method == HTML_REQUEST_METHOD_REQUEST:
             # plain request
-            res = httpx.get(url)
+            res = httpx.get(url, timeout=Timeout(timeout=self.request_rod_duration))
             if res.status_code != 200:
                 raise Exception(f'Invalid response from request: {res.status_code}')
             self.html_response = res

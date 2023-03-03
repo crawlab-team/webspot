@@ -119,7 +119,7 @@ export default {
         </el-form-item>
         <el-form-item label="Next">
           <el-tag type="primary">{{ result.selectors.next.selector }}</el-tag>
-          <el-icon style="margin-left:5px;cursor:pointer;" @click="() => onCopy(result.selectors.list.selector)">
+          <el-icon style="margin-left:5px;cursor:pointer;" @click="() => onCopy(result.selectors.next.selector)">
             <i class="fa fa-paste"></i>
           </el-icon>
         </el-form-item>

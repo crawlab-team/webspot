@@ -88,13 +88,9 @@ class PaginationDetector(BaseDetector):
         return self._get_url_path_fragment(self.root_url)
 
     @property
-    def link_nodes_idx(self):
-        feature_tag_a_idx = np.argwhere(np.array(self.graph_loader.nodes_features_enc.feature_names_) == 'tag=a')[0]
-        return np.argwhere(self.graph_loader.nodes_features_tensor[:, feature_tag_a_idx].T[0] == 1)[0].detach().numpy()
-
-    @property
     def link_nodes(self):
-        return [n for n in self.graph_loader.nodes[self.link_nodes_idx] if n.attrs.get('href') is not None]
+        return [n for n in self.get_nodes_by_feature(feature_key='tag', feature_value='a')
+                if n.attrs.get('href') is not None]
 
     def _get_internal_link_nodes(self):
         self.internal_link_nodes = [

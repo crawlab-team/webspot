@@ -12,6 +12,7 @@ from sklearn.preprocessing import LabelEncoder
 from dgl import DGLGraph
 
 from webspot.graph.models.node import Node
+from webspot.utils.time import timeit
 
 
 class GraphLoader(object):
@@ -71,6 +72,7 @@ class GraphLoader(object):
         g_nx = self.g_dgl.to_networkx()
         return g_nx
 
+    @timeit
     def load_graph_data(self):
         # get list data and root node
         self.json_data = html_to_json_enhanced.convert_html.convert(self.html, with_id=True)
@@ -158,6 +160,7 @@ class GraphLoader(object):
         else:
             return
 
+    @timeit
     def load_tensors(self):
         # nodes tensor
         encoded_nodes = self.node_ids_enc.transform([n.id for n in self.nodes_])
@@ -176,9 +179,11 @@ class GraphLoader(object):
         self.edges_source_tensor = torch.LongTensor(encoded_source)
         self.edges_target_tensor = torch.LongTensor(encoded_target)
 
+    @timeit
     def load_dgl_graph(self):
         self.g_dgl = dgl.graph((self.edges_source_tensor, self.edges_target_tensor))
 
+    @timeit
     def load_embeddings(self):
         # embedded nodes tensor
         self.nodes_embedded_tensor = dgl.sampling.node2vec_random_walk(
@@ -189,6 +194,7 @@ class GraphLoader(object):
             walk_length=self.embed_walk_length,
         )
 
+    @timeit
     def run(self):
         self.load_graph_data()
         self.load_tensors()

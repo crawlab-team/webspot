@@ -24,6 +24,7 @@ from webspot.detect.models.list_result import ListResult
 from webspot.graph.graph_loader import GraphLoader
 from webspot.graph.models.node import Node
 from webspot.request.html_requester import HtmlRequester
+from webspot.utils.time import timeit
 from webspot.web.logging import logger
 
 
@@ -231,9 +232,11 @@ class PlainListDetector(BaseDetector):
             data.append(row)
         return data
 
+    @timeit
     def _train(self):
         self.dbscan.fit(self._get_nodes_features())
 
+    @timeit
     def _pre_filter(self) -> (List[Node], List[List[Node]]):
         df_nodes = pd.DataFrame({
             'id': [n.id for n in self.graph_loader.nodes_],
@@ -267,6 +270,7 @@ class PlainListDetector(BaseDetector):
 
         return list_node_list, item_nodes_list
 
+    @timeit
     def _filter(
         self,
         list_node_list: List[Node],
@@ -319,6 +323,7 @@ class PlainListDetector(BaseDetector):
 
         return res_list_node_list, res_item_nodes_list, score_list, scores_list
 
+    @timeit
     def _extract(
         self,
         list_node_list: List[Node],
@@ -388,6 +393,7 @@ class PlainListDetector(BaseDetector):
 
         return results
 
+    @timeit
     def _sort(self, results: List[ListResult]) -> List[ListResult]:
         results = sorted(results, key=lambda x: x.score, reverse=True)
 
@@ -397,6 +403,7 @@ class PlainListDetector(BaseDetector):
 
         return results
 
+    @timeit
     def run(self):
         tic = time.time()
 
@@ -431,9 +438,10 @@ if __name__ == '__main__':
         # 'https://github.com/crawlab-team/crawlab/actions',
         # 'https://quotes.toscrape.com',
         # 'https://quotes.toscrape.com/page/2/',
-        'https://books.toscrape.com',
+        # 'https://books.toscrape.com',
         # 'https://cuiqingcai.com/archives/',
         # 'https://cuiqingcai.com/archives/page/2/',
+        'https://cuiqingcai.com',
     ]
 
     for url in urls:

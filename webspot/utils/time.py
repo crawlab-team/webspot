@@ -2,6 +2,8 @@ import os
 from functools import wraps
 import time
 
+from webspot.web.logging import logger
+
 
 def timeit(func):
     @wraps(func)
@@ -11,7 +13,7 @@ def timeit(func):
         end_time = time.perf_counter()
         total_time = (end_time - start_time) * 1e3
         if os.environ.get('WEBSPOT_DEBUG', False).lower() == 'true':
-            print(f'[{total_time:.0f}ms] {func.__name__}{args} {kwargs}')
+            logger.debug(f'[{total_time:.0f}ms] {func.__name__}{args} {kwargs}')
         return result
 
     return timeit_wrapper

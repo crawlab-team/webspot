@@ -7,6 +7,7 @@ import networkx as nx
 import numpy as np
 import torch
 from html_to_json_enhanced import iterate
+from networkx import DiGraph
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.preprocessing import LabelEncoder
 from dgl import DGLGraph
@@ -68,8 +69,8 @@ class GraphLoader(object):
         return self._nodes_dict
 
     @property
-    def g_nx(self) -> nx.Graph:
-        g_nx = self.g_dgl.to_networkx()
+    def g_nx(self) -> nx.DiGraph:
+        g_nx = DiGraph(self.g_dgl.to_networkx())
         return g_nx
 
     @timeit
@@ -216,10 +217,9 @@ class GraphLoader(object):
 
     def get_node_children_recursive_by_id(self, id: int) -> List[Node]:
         idx = self.node_ids_enc.transform([id])[0]
-        tree_data = nx.tree_data(self.g_nx, idx)
-        tree_graph = nx.tree_graph(tree_data)
-        child_ids = self.node_ids_enc.inverse_transform([nid for nid in tree_graph.nodes() if nid != idx])
-        return [self.get_node_by_id(cid) for cid in child_ids]
+        child_nodes_idx = self.g_nx.successors(idx)
+        child_ids = self.node_ids_enc.inverse_transform([nid for nid in child_nodes_idx if nid != idx])
+        return self.get_nodes_by_ids(child_ids)
 
     def get_node_children_by_id(self, id: int) -> List[Node]:
         return [n for n in self.nodes_ if n.parent_id == id]
@@ -283,6 +283,11 @@ class GraphLoader(object):
                 and n.feature_tag == node.feature_tag
                 and node_feature_classes_set.issubset(set(n.feature_classes))]
 
+    def _is_node_last_child(self, node: Node) -> bool:
+        parent = self.get_node_by_id(node.parent_id)
+        children = self.get_node_children_by_id(parent.id)
+        return node.id == children[-1].id
+
     def get_node_css_selector_repr(self, node: Node, numbered: bool = True) -> str:
         if numbered:
             return self._get_node_css_selector_repr(node, numbered)
@@ -303,16 +308,20 @@ class GraphLoader(object):
             if numbered:
                 previous_siblings = self._get_node_previous_siblings_with_classes(node)
                 length = len(previous_siblings) + 1
-                if length > 1:
-                    return f'{node.feature_tag}.{".".join(node.feature_classes)}:nth-child({length})'
+                if self._is_node_last_child(node):
+                    return f'{node.feature_tag}.{".".join(node.feature_classes)}:last-child'
+                elif length > 1:
+                    return f'{node.feature_tag}.{".".join(node.feature_classes)}:nth-of-type({length})'
             return f'{node.feature_tag}.{".".join(node.feature_classes)}'
 
         # tag
         else:
             if numbered:
                 length = len(self._get_node_previous_siblings(node)) + 1
-                if length > 1:
-                    return f'{node.feature_tag}:nth-child({length})'
+                if self._is_node_last_child(node):
+                    return f'{node.feature_tag}:last-child'
+                elif length > 1:
+                    return f'{node.feature_tag}:nth-of-type({length})'
             return f'{node.feature_tag}'
 
     @staticmethod

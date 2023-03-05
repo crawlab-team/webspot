@@ -1,5 +1,5 @@
-import PlainListDialog from './plain-list-dialog.js';
-import PaginationDialog from './pagination-dialog.js';
+import PlainListDialog from '../form/plain-list-form.js';
+import PaginationDialog from '../form/pagination-form.js';
 
 const {ref, computed} = Vue;
 const {useStore} = Vuex;
@@ -22,16 +22,9 @@ export default {
 
     const onClickNode = (result) => {
       if (result.children) return;
-      activeResult.value = result;
-      dialogVisible.value = true;
+      store.commit('setActiveResult', result);
+      store.commit('setActiveResultDialogVisible', true);
     };
-
-    const dialogVisible = ref(false);
-    const onDialogClose = () => {
-      dialogVisible.value = false;
-    };
-
-    const activeResult = ref({});
 
     const resultsTree = computed(() => {
       const res = Object.keys(activeRequestResults.value).map((key) => {
@@ -76,9 +69,6 @@ export default {
       isCollapsed,
       onToggle,
       onClickNode,
-      dialogVisible,
-      onDialogClose,
-      activeResult,
       resultsTree,
       getIcon,
     };
@@ -104,19 +94,6 @@ export default {
       </div>
     </template>
   </el-tree>
-
-  <plain-list-dialog
-    v-show="activeResult.detector === 'plain_list'"
-    :visible="dialogVisible"
-    :result="activeResult"
-    @close="onDialogClose"
-   />
-  <pagination-dialog
-    v-show="activeResult.detector === 'pagination'"
-    :visible="dialogVisible"
-    :result="activeResult"
-    @close="onDialogClose"
-  />
 </div>
 `
 };

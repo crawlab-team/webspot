@@ -13,6 +13,9 @@ const store = createStore({
       requests: [],
       activeRequestId: undefined,
       requestForm: undefined,
+      activeResult: undefined,
+      activeResultTabName: 'overview',
+      activeResultDialogVisible: false,
     };
   },
   getters: {
@@ -53,6 +56,12 @@ const store = createStore({
       state.requestForm = {...defaultRequestForm};
       return {...defaultRequestForm};
     },
+    activeResultDetector(state) {
+      return state.activeResult ? state.activeResult.detector : '';
+    },
+    activeResultName(state) {
+      return state.activeResult ? state.activeResult.name : '';
+    },
   },
   mutations: {
     setRequests(state, requests) {
@@ -73,6 +82,21 @@ const store = createStore({
       localStorage.setItem('requestForm', JSON.stringify(defaultRequestForm));
       return {...defaultRequestForm};
     },
+    setActiveResult(state, result) {
+      state.activeResult = result;
+    },
+    resetActiveResult(state) {
+      state.activeResult = undefined;
+    },
+    setActiveResultTabName(state, tabName) {
+      state.activeResultTabName = tabName;
+    },
+    resetActiveResultTabName(state) {
+      state.activeResultTabName = 'overview';
+    },
+    setActiveResultDialogVisible(state, visible) {
+      state.activeResultDialogVisible = visible;
+    }
   },
   actions: {
     async getRequests({commit, state}) {

@@ -37,7 +37,7 @@ async def request(id: str) -> RequestOut:
 async def request_html(id: str) -> HTMLResponse:
     """Get a request."""
     d = Request.objects(pk=id).first()
-    return HTMLResponse(content=d.html_highlighted)
+    return HTMLResponse(content=embed_highlight_css(d.html_highlighted))
 
 
 @app.put('/api/requests/{id}')
@@ -133,9 +133,6 @@ def _run_request(d: Request):
 
             # execution time
             execution_time['detectors'][detector_name] = round((datetime.now() - tic).total_seconds() * 1000)
-
-        # embed highlight css
-        html = embed_highlight_css(html)
 
         # update request
         d.status = REQUEST_STATUS_SUCCESS

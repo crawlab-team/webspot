@@ -18,6 +18,16 @@ from webspot.logging import get_logger
 
 logger = get_logger('webspot.graph.graph_loader')
 
+SVG_TAG_NAMES = ['circle', 'clipPath', 'defs', 'ellipse', 'g', 'image', 'line', 'linearGradient',
+                 'mask', 'path', 'pattern', 'polygon', 'polyline', 'radialGradient', 'rect',
+                 'stop', 'svg', 'text', 'tspan']
+ESCAPED_TAG_NAMES = [
+    'script',
+    'link',
+    'meta',
+    *SVG_TAG_NAMES,
+]
+
 
 class GraphLoader(object):
     def __init__(
@@ -35,6 +45,7 @@ class GraphLoader(object):
             'tag',
             'id',
             'class',
+            'style',
         ]
         self.dfs_depth = dfs_depth
 
@@ -115,13 +126,18 @@ class GraphLoader(object):
             # node
             node = self._get_node(node_json_data)
 
+            # skip escaped tags
+            if node.tag in ESCAPED_TAG_NAMES:
+                continue
+
             # add to all nodes
             self.nodes_.append(node)
 
             # add to all node features
-            self.nodes_features.append(node.features_dict)
-            # self.nodes_features.append({k: v for k, v in node.features_dict.items()
-            #                             if k.split('=')[0] in self.available_feature_keys})
+            # self.nodes_features.append(node.features_dict)
+            self.nodes_features.append({k: v for k, v in node.features_dict.items()
+                                        if k.split('=')[0] in self.available_feature_keys
+                                        })
 
     def _get_node(self, node_json_data: dict) -> Node:
         node_id = node_json_data.get('_id')
@@ -230,48 +246,18 @@ class GraphLoader(object):
         return [self.get_node_by_id(id) for id in ids]
 
     def get_node_children_recursive_by_id(self, id: int) -> List[Node]:
-        # idx = self.node_ids_enc.transform([id])[0]
-        idx = self.get_idx(id=id)
-
-        # child_nodes_idx = self.get_node_children_idx_recursive_by_idx(idx)
-        successors = self.get_dfs_successors(G=self.g_nx, source=idx, depth_limit=self.dfs_depth)
-        child_nodes_idx = self.get_child_nodes_idx(successors)
-        child_nodes_idx = self.get_results(child_nodes_idx)
-        logger.debug(child_nodes_idx)
-
-        # child_ids = self.node_ids_enc.inverse_transform([nid for nid in child_nodes_idx if nid != idx])
-        child_ids = self.get_child_ids(child_nodes_idx, idx)
-
+        idx = self.node_ids_enc.transform([id])[0]
+        child_nodes_idx = self.get_node_children_idx_recursive_by_idx(idx)
+        child_ids = self.node_ids_enc.inverse_transform([nid for nid in child_nodes_idx if nid != idx])
         return self.get_nodes_by_ids(child_ids)
 
-    def get_idx(self, id):
-        return self.node_ids_enc.transform([id])[0]
-
-    def get_child_ids(self, child_nodes_idx, idx):
-        return self.node_ids_enc.inverse_transform([nid for nid in child_nodes_idx if nid != idx])
-
     def get_node_children_idx_recursive_by_idx(self, idx: int) -> np.ndarray:
-        # successors = dfs_successors(G=self.g_nx, source=idx, depth_limit=self.dfs_depth)
-        successors = self.get_dfs_successors(G=self.g_nx, source=idx, depth_limit=self.dfs_depth)
-        # child_nodes_idx = [item for sublist in successors.values() for item in sublist]
-        child_nodes_idx = self.get_child_nodes_idx(successors)
-        # return np.array(list(child_nodes_idx))
-        return self.get_results(child_nodes_idx)
-
-    @staticmethod
-    def get_dfs_successors(**kwargs):
-        return dfs_successors(**kwargs)
-
-    @staticmethod
-    def get_child_nodes_idx(successors):
-        return [item for sublist in successors.values() for item in sublist]
-
-    @staticmethod
-    def get_results(child_nodes_idx):
+        successors = dfs_successors(G=self.g_nx, source=idx, depth_limit=self.dfs_depth)
+        child_nodes_idx = [item for sublist in successors.values() for item in sublist]
         return np.array(list(child_nodes_idx))
 
     def get_node_text_length(self, n: Node) -> int:
-        selector = self.get_node_css_selector_repr(n)
+        selector = self.get_node_css_selector_path(n)
         el = self._soup.select_one(selector)
         if el is None:
             return 0

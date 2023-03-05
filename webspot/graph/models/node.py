@@ -1,3 +1,4 @@
+import re
 from typing import Tuple, List, Dict, Optional
 
 
@@ -37,6 +38,9 @@ class Node(dict):
         classes = []
         for k, v in self.features:
             if k == 'class':
+                # css parser cannot parse class starting with a digit
+                if re.search(r'^\d', v) is not None:
+                    continue
                 classes.append(v)
         return classes
 

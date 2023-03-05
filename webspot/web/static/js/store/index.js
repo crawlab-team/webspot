@@ -20,7 +20,7 @@ const store = createStore({
       return state.requests.length === 0;
     },
     activeRequest(state) {
-      return state.requests.find((request) => request._id === state.activeRequestId);
+      return state.requests.find((request) => request.id === state.activeRequestId);
     },
     activeRequestStatus(state, getters) {
       return getters.activeRequest ? getters.activeRequest.status : '';
@@ -84,7 +84,7 @@ const store = createStore({
 
       // Set active request id if it's not set yet
       if (state.activeRequestId === undefined && res.data.length > 0) {
-        commit('setActiveRequestId', res.data[0]._id);
+        commit('setActiveRequestId', res.data[0].id);
       }
     },
     async postRequest({getters, commit, dispatch}, request) {
@@ -92,6 +92,7 @@ const store = createStore({
         ...getters.requestForm,
         ...request,
       });
+      await dispatch('getRequests');
       await ElNotification({
         title: 'Triggered request',
         message: h('span', [
@@ -100,10 +101,9 @@ const store = createStore({
         ]),
         type: 'info',
       });
-      await dispatch('getRequests');
 
       // Set result id as active
-      commit('setActiveRequestId', res.data._id);
+      commit('setActiveRequestId', res.data.id);
     },
   }
 });

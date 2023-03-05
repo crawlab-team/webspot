@@ -10,7 +10,8 @@ export default {
 
     const activeRequestId = computed(() => store.state.activeRequestId);
 
-    const activeRequestHtmlHighlighted = computed(() => convertToBase64(store.getters.activeRequestHtmlHighlighted));
+    // const activeRequestHtmlHighlighted = computed(() => convertToBase64(store.getters.activeRequestHtmlHighlighted));
+    const activeRequestHtmlSrc = computed(() => `/api/requests/${activeRequestId.value}/html`);
 
     const isLoading = ref(false);
 
@@ -25,12 +26,12 @@ export default {
     onMounted(invokeLoading);
 
     return {
-      activeRequestHtmlHighlighted,
+      activeRequestHtmlSrc,
       isLoading,
     };
   },
   template: `<div class="preview-container">
   <el-skeleton v-if="isLoading" style="height: 100%; width: 100%; padding: 2%" :rows="25"/>
-  <iframe v-else id="iframe" width="100%" height="100%" :src="'data:text/html;base64,'+activeRequestHtmlHighlighted"></iframe>
+  <iframe v-else id="iframe" width="100%" height="100%" :src="activeRequestHtmlSrc"></iframe>
 </div>`
 };

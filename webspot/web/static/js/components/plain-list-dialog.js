@@ -22,7 +22,7 @@ export default {
         const arr = data.map(d => d[f.name]).filter(d => d !== undefined);
         // add the label of each column
         arr.push(f.name);
-        f.width = getMaxLength(arr) + 60;
+        f.width = Math.min(getMaxLength(arr) + 60, 320);
         return {
           ...f,
           key: f.name,

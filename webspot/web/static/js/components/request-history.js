@@ -33,7 +33,7 @@ export default {
     const activeRequestId = computed(() => store.state.activeRequestId);
 
     const onClickRequest = (request) => {
-      store.commit('setActiveRequestId', request._id);
+      store.commit('setActiveRequestId', request.id);
     };
 
     return {
@@ -47,7 +47,7 @@ export default {
   template: `
 <div class="request-history" style="flex: 0 0 240px">
   <el-menu :default-active="activeRequestId" v-model="" style="height: 100%">
-    <el-menu-item v-for="(request, $index) in requests" :key="$index" :index="request._id" @click="() => onClickRequest(request)">
+    <el-menu-item v-for="(request, $index) in requests" :key="$index" :index="request.id" @click="() => onClickRequest(request)">
       <el-icon size="12">
         <i :class="getRequestDataByStatus(request).icon" :style="{color: getRequestDataByStatus(request).color}"></i>
       </el-icon>

@@ -1,6 +1,5 @@
 import base64
 import json
-import logging
 import time
 from typing import List, Set, Dict
 from urllib.parse import urljoin
@@ -8,6 +7,7 @@ from urllib.parse import urljoin
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
+from scipy.sparse import csr_matrix
 from scipy.stats import entropy
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import normalize
@@ -18,13 +18,14 @@ from webspot.constants.field_extract_rule_type import FIELD_EXTRACT_RULE_TYPE_TE
 from webspot.detect.detectors.base import BaseDetector
 from webspot.detect.models.selector import Selector
 from webspot.detect.utils.math import log_positive
-from webspot.detect.utils.node import get_node_inner_text
 from webspot.detect.utils.highlight_html import add_class, add_label
 from webspot.detect.models.list_result import ListResult
 from webspot.graph.graph_loader import GraphLoader
 from webspot.graph.models.node import Node
+from webspot.logging import get_logger
 from webspot.request.html_requester import HtmlRequester
-from webspot.web.logging import logger
+
+logger = get_logger('webspot.detect.detectors.plain_list')
 
 
 class PlainListDetector(BaseDetector):
@@ -33,6 +34,7 @@ class PlainListDetector(BaseDetector):
         dbscan_eps: float = 0.5,
         dbscan_min_samples: int = 3,
         dbscan_metric: str = 'euclidean',
+        dbscan_n_jobs: int = -1,
         entropy_threshold: float = 1e-3,
         score_threshold: float = 1.,
         item_nodes_samples: int = 5,
@@ -57,6 +59,7 @@ class PlainListDetector(BaseDetector):
             metric=dbscan_metric,
             eps=dbscan_eps,
             min_samples=dbscan_min_samples,
+            n_jobs=dbscan_n_jobs,
         )
 
         # data
@@ -145,13 +148,13 @@ class PlainListDetector(BaseDetector):
             axis=1,
         )
 
-    def _get_nodes_features(self, nodes_idx: np.ndarray = None):
+    def _get_nodes_features(self, nodes_idx: np.ndarray = None, to_sparse: bool = False):
         """
         nodes features (tags + attributes + node2vec)
         """
         x1 = self._get_nodes_features_tags_attrs(nodes_idx)
         x2 = self._get_nodes_features_node2vec(nodes_idx) * self.node2vec_ratio
-        return normalize(
+        x = normalize(
             np.concatenate(
                 (x1, x2),
                 axis=1,
@@ -159,8 +162,14 @@ class PlainListDetector(BaseDetector):
             norm='l2',
             axis=1,
         )
+        logger.debug(f'nodes features size: {x.shape}')
 
-    def _extract_fields_by_id(self, list_id: int) -> List[Selector]:
+        if to_sparse:
+            return csr_matrix(x)
+        else:
+            return x
+
+    def _extract_fields_by_id(self, list_id: int, item_nodes: List[Node]) -> List[Selector]:
         # fields
         fields: List[Selector] = []
 
@@ -171,7 +180,11 @@ class PlainListDetector(BaseDetector):
         list_child_nodes = self.graph_loader.get_node_children_by_id(list_id)
 
         # iterate list child nodes
-        for i, c in enumerate(list_child_nodes):
+        i = 0
+        for c in list_child_nodes:
+            if c.tag != item_nodes[0].tag:
+                continue
+
             # stop if item nodes samples reached
             if i == self.item_nodes_samples:
                 break
@@ -198,6 +211,8 @@ class PlainListDetector(BaseDetector):
                     extract_rule_css = self.graph_loader.get_node_css_selector_path(node=n, root_id=list_id,
                                                                                     numbered=False)
                     fields_extract_rules_set.add((extract_rule_css, FIELD_EXTRACT_RULE_TYPE_IMAGE_URL, 'src'))
+
+            i += 1
 
         for i, item in enumerate(fields_extract_rules_set):
             extract_rule_css, type_, attribute = item
@@ -232,7 +247,7 @@ class PlainListDetector(BaseDetector):
         return data
 
     def _train(self):
-        self.dbscan.fit(self._get_nodes_features())
+        self.dbscan.fit(self._get_nodes_features(to_sparse=True))
 
     def _pre_filter(self) -> (List[Node], List[List[Node]]):
         df_nodes = pd.DataFrame({
@@ -285,13 +300,17 @@ class PlainListDetector(BaseDetector):
 
                 # scores
                 score_text_richness = log_positive(
-                    np.array([(len(get_node_inner_text(self.graph_loader, n)) * self.text_length_discount)
-                              for n in item_nodes]).sum())
+                    np.array([(self.graph_loader.get_node_text_length(n) * self.text_length_discount)
+                              for i, n in enumerate(item_nodes, i) if i < 10]).sum())
                 score_complexity = float(entropy(nodes_features_vec_norm, axis=1)[0])
                 score_item_count = log_positive(len(item_nodes))
+                logger.debug(f'score_text_richness: {score_text_richness}')
+                logger.debug(f'score_complexity: {score_complexity}')
+                logger.debug(f'score_item_count: {score_item_count}')
 
                 # score
                 score = score_text_richness * score_complexity * score_item_count
+                logger.debug(f'score: {score}')
 
                 # skip score less than threshold
                 if score < self.score_threshold:
@@ -366,7 +385,7 @@ class PlainListDetector(BaseDetector):
             )
 
             # fields node extract rule
-            fields_selectors = self._extract_fields_by_id(list_node.id)
+            fields_selectors = self._extract_fields_by_id(list_id=list_node.id, item_nodes=item_nodes)
 
             # data
             data = self._extract_data(soup, full_items_selector.selector, fields_selectors)
@@ -421,30 +440,22 @@ class PlainListDetector(BaseDetector):
         return self.results
 
 
+def run_plain_list_detector(url: str) -> PlainListDetector:
+    html_requester = HtmlRequester(url=url, request_method='request')
+    html_requester.run()
+
+    graph_loader = GraphLoader(html=html_requester.html_, json_data=html_requester.json_data)
+    graph_loader.run()
+
+    plain_list_detector = PlainListDetector(html_requester=html_requester, graph_loader=graph_loader)
+    plain_list_detector.run()
+
+    return plain_list_detector
+
+
 if __name__ == '__main__':
     urls = [
-        # 'https://www.baidu.com/s?wd=crawlab',
-        # 'https://github.com/search?q=spider',
-        # 'https://www.bing.com/search?q=crawlab&form=QBLHCN&sp=-1&lq=0&pq=&sc=0-0&qs=n&sk=&cvid=BB20795C2CB64FCFBC5A0B69070A11AA&ghsh=0&ghacc=0&ghpl=',
-        # 'https://www.bing.com/search?q=crawlab&sp=-1&lq=0&pq=&sc=0-0&qs=n&sk=&cvid=BB20795C2CB64FCFBC5A0B69070A11AA&ghsh=0&ghacc=0&ghpl=&first=11&FORM=PORE',
-        # 'https://github.com/trending',
-        # 'https://github.com/crawlab-team/crawlab/actions',
-        # 'https://quotes.toscrape.com',
-        # 'https://quotes.toscrape.com/page/2/',
-        'https://books.toscrape.com',
-        # 'https://cuiqingcai.com/archives/',
-        # 'https://cuiqingcai.com/archives/page/2/',
+        'https://cuiqingcai.com'
     ]
-
     for url in urls:
-        html_requester = HtmlRequester(url=url, request_method='request')
-        html_requester.run()
-
-        graph_loader = GraphLoader(html=html_requester.html_, json_data=html_requester.json_data)
-        graph_loader.run()
-
-        plain_list_detector = PlainListDetector(html_requester=html_requester, graph_loader=graph_loader)
-        plain_list_detector.run()
-        print(url)
-        print(plain_list_detector.results)
-        print('\n\n')
+        run_plain_list_detector(url)

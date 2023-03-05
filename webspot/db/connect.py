@@ -4,6 +4,8 @@ from mongoengine import connect as mongo_connect
 
 from webspot.utils.test import is_running_unit_tests
 
+DEFAULT_DATABASE_URL = 'mongodb://localhost:27017/webspot'
+
 
 def connect():
     if is_running_unit_tests():
@@ -15,6 +17,4 @@ def connect():
 
 
 def get_connection_str():
-    if os.environ.get('WEBSPOT_DATABASE_URL'):
-        return os.environ.get('WEBSPOT_DATABASE_URL')
-    return 'mongodb://localhost:27017/webspot'
+    return os.environ.get('WEBSPOT_DATABASE_URL', DEFAULT_DATABASE_URL)

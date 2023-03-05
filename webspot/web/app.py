@@ -20,7 +20,7 @@ db_connect()
 app.mount('/static', StaticFiles(directory=os.path.join(root_path, 'static')), name='static')
 
 # set no cache for static files
-if os.environ.get('WEBSERVER_NO_CACHE', 'false').lower() == 'true':
+if os.environ.get('WEBSPOT_WEB_NO_CACHE', 'false').lower() == 'true':
     __import__('webspot.web.middlewares.no_cache')
 
 # templates

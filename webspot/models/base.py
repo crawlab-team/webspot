@@ -1,11 +1,20 @@
 import json
+from abc import abstractmethod
 from datetime import datetime
 from typing import Optional
 
 from mongoengine import Document, StringField, DateTimeField, pre_save
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from webspot.utils.mongo import encode_mongo_document
+
+
+class BaseOut(BaseModel):
+    id: str
+    created_at: datetime
+    created_by: Optional[str]
+    updated_at: Optional[datetime]
+    updated_by: Optional[str]
 
 
 class Base(Document):
@@ -28,9 +37,6 @@ class Base(Document):
         doc_json = encode_mongo_document(self.to_mongo(use_db_field))
         return json.loads(doc_json)
 
-
-class BaseIn(BaseModel):
-    created_at: datetime
-    created_by: Optional[str]
-    updated_at: Optional[datetime]
-    updated_by: Optional[str]
+    @abstractmethod
+    def to_out(self) -> BaseOut:
+        return BaseOut(**self.to_dict())

@@ -34,7 +34,8 @@ test_cases = [
             'selectors': {
                 'list': 'main > div.position-relative.container-lg.p-responsive.pt-6 > div.Box > div:last-child'
             }
-        }
+        },
+        'target_index': 1,
     },
     {
         'url': 'https://github.com/search?q=spider',

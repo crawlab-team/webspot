@@ -1,10 +1,11 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 
 from mongoengine import StringField, BooleanField, ListField, IntField, DictField
 
 from webspot.constants.detector import DETECTOR_PLAIN_LIST, DETECTOR_PAGINATION
 from webspot.constants.html_request_method import HTML_REQUEST_METHOD_REQUEST
 from webspot.constants.request_status import REQUEST_STATUS_PENDING
+from webspot.detect.models.list_result import ListResult
 from webspot.detect.models.result import Result
 from webspot.models.base import Base, BaseOut
 
@@ -14,7 +15,7 @@ class RequestOut(BaseOut):
     method: Optional[str]
     duration: Optional[int]
     status: Optional[str]
-    results: Optional[Dict[str, List[Result]]]
+    results: Optional[Dict[str, List[Union[ListResult, Result]]]]
     valid: Optional[bool]
     error: Optional[str]
     no_async: Optional[bool]

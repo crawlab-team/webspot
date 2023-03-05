@@ -1,9 +1,11 @@
 const {ref, computed, onBeforeMount} = Vue;
 const {useStore} = Vuex;
-import RequestHistory from './components/request-history.js';
-import TopNavbar from './components/top-navbar.js';
-import NavSidebar from './components/nav-sidebar.js';
-import PreviewContainer from './components/preview-container.js';
+
+import RequestHistory from './components/nav/request-history-sidebar.js';
+import TopNavbar from './components/nav/top-navbar.js';
+import NavSidebar from './components/nav/results-sidebar.js';
+import PreviewContainer from './components/layout/preview-container.js';
+import ResultDialog from './components/dialog/result-dialog.js';
 
 export default {
   components: {
@@ -11,6 +13,7 @@ export default {
     TopNavbar,
     NavSidebar,
     PreviewContainer,
+    ResultDialog,
   },
   setup() {
     const store = useStore();
@@ -99,6 +102,11 @@ export default {
       <preview-container/>
     </template>
     <!--./results-->
+
+    <!--result dialog-->
+    <result-dialog/>
+    <!--./result dialog-->
+
   </template>
 </div>
 `

@@ -1,5 +1,3 @@
-import {convertToBase64} from '../utils/base64.js';
-
 const {ref, computed, watch, onMounted} = Vue;
 const {useStore} = Vuex;
 

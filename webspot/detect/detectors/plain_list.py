@@ -37,10 +37,12 @@ class PlainListDetector(BaseDetector):
         dbscan_n_jobs: int = -1,
         entropy_threshold: float = 1e-3,
         score_threshold: float = 1.,
-        item_nodes_samples: int = 5,
+        min_item_nodes: int = 5,
         node2vec_ratio: float = 1.,
         text_length_discount: float = 1e-2,
         result_name_prefix: str = 'List',
+        max_item_count: int = 10,
+        max_feature_count: int = 10,
         *args,
         **kwargs,
     ):
@@ -49,10 +51,12 @@ class PlainListDetector(BaseDetector):
         # settings
         self.entropy_threshold = entropy_threshold
         self.score_threshold = score_threshold
-        self.item_nodes_samples = item_nodes_samples
+        self.min_item_nodes = min_item_nodes
         self.node2vec_ratio = node2vec_ratio
         self.text_length_discount = text_length_discount
         self.result_name_prefix = result_name_prefix
+        self.max_item_count = max_item_count
+        self.max_feature_count = max_feature_count
 
         # dbscan model
         self.dbscan = DBSCAN(
@@ -186,7 +190,7 @@ class PlainListDetector(BaseDetector):
                 continue
 
             # stop if item nodes samples reached
-            if i == self.item_nodes_samples:
+            if i == self.min_item_nodes:
                 break
 
             # item child nodes
@@ -255,30 +259,45 @@ class PlainListDetector(BaseDetector):
             'parent_id': [n.parent_id for n in self.graph_loader.nodes_],
             'label': self.dbscan.labels_,
         })
-        df_nodes = df_nodes[df_nodes.label != -1]
+        df_nodes_filtered = df_nodes[df_nodes.label != -1]
+        logger.debug('nodes before pre-filter: %s' % df_nodes.shape[0])
+        logger.debug('nodes after pre-filter: %s' % df_nodes_filtered.shape[0])
 
-        df_labels = df_nodes \
+        df_labels = df_nodes_filtered \
             .groupby('label')[['parent_id']] \
             .agg(lambda s: entropy(s.value_counts())) \
             .rename(columns={'parent_id': 'entropy'}) \
             .sort_values(by='entropy', ascending=True)
 
-        threshold_mask = df_labels.entropy < self.entropy_threshold
-        df_labels_filtered = df_labels[threshold_mask]
+        # threshold_mask = df_labels.entropy < self.entropy_threshold
+        # df_labels_filtered = df_labels[threshold_mask]
 
         item_nodes_list = []
         list_node_list = []
-        for label in df_labels_filtered.index:
-            # item node ids
-            item_nodes_ids = df_nodes[df_nodes.label == label].id.values
+        for label in df_labels.index:
+            # item nodes (filtered by label only)
+            df_nodes_filtered_by_label = df_nodes_filtered[df_nodes_filtered.label == label]
 
-            # item nodes
-            item_nodes = self.graph_loader.get_nodes_by_ids(item_nodes_ids)
-            item_nodes_list.append(item_nodes)
+            # iterate parent id
+            for parent_id in df_nodes_filtered_by_label.parent_id.unique().tolist():
+                # item nodes (further filtered parent id)
+                df_nodes_filtered_by_label_parent_id = df_nodes_filtered_by_label[
+                    df_nodes_filtered.parent_id == parent_id]
 
-            # list node
-            list_node = self.graph_loader.get_node_by_id(item_nodes[0].parent_id)
-            list_node_list.append(list_node)
+                # skip if item nodes count is less than required
+                if df_nodes_filtered_by_label_parent_id.shape[0] < self.min_item_nodes:
+                    continue
+
+                # item node ids
+                item_nodes_ids = df_nodes_filtered_by_label_parent_id.id.values
+
+                # item nodes
+                item_nodes = self.graph_loader.get_nodes_by_ids(item_nodes_ids)
+                item_nodes_list.append(item_nodes)
+
+                # list node
+                list_node = self.graph_loader.get_node_by_id(item_nodes[0].parent_id)
+                list_node_list.append(list_node)
 
         return list_node_list, item_nodes_list
 
@@ -296,14 +315,13 @@ class PlainListDetector(BaseDetector):
 
             try:
                 nodes_features_vec = self._get_nodes_features(nodes_idx)
-                nodes_features_vec_norm = normalize(nodes_features_vec.sum(axis=0).reshape(1, -1), norm='l1')
+                nodes_features_vec_idx = np.argwhere(nodes_features_vec.sum(axis=0) > 0).T[0]
 
                 # scores
                 score_text_richness = log_positive(
-                    np.array([(self.graph_loader.get_node_text_length(n) * self.text_length_discount)
-                              for i, n in enumerate(item_nodes, i) if i < 10]).sum())
-                score_complexity = float(entropy(nodes_features_vec_norm, axis=1)[0])
-                score_item_count = log_positive(len(item_nodes))
+                    self.graph_loader.get_node_text_length(list_node) * self.text_length_discount)
+                score_complexity = log_positive(min(len(nodes_features_vec_idx), self.max_feature_count))
+                score_item_count = log_positive(min(len(item_nodes), self.max_item_count))
                 logger.debug(f'score_text_richness: {score_text_richness}')
                 logger.debug(f'score_complexity: {score_complexity}')
                 logger.debug(f'score_item_count: {score_item_count}')
@@ -440,8 +458,8 @@ class PlainListDetector(BaseDetector):
         return self.results
 
 
-def run_plain_list_detector(url: str) -> PlainListDetector:
-    html_requester = HtmlRequester(url=url, request_method='request')
+def run_plain_list_detector(url: str, method: str = None) -> PlainListDetector:
+    html_requester = HtmlRequester(url=url, request_method=method)
     html_requester.run()
 
     graph_loader = GraphLoader(html=html_requester.html_, json_data=html_requester.json_data)

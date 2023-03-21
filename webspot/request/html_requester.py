@@ -35,6 +35,7 @@ class HtmlRequester(object):
         self.request_rod_url = request_rod_url
         self.request_rod_duration = request_rod_duration
         self.save = save
+        self.encodings = ['utf-8', 'gbk', 'iso-8859-1', 'cp1252']
 
         # data
         self.html_: Optional[str] = None
@@ -43,6 +44,16 @@ class HtmlRequester(object):
 
         # logger
         self.logger = logging.getLogger('webspot.request.html_requester')
+
+    def _decode_response_content(self, res: Response) -> str:
+        content = ''
+        for encoding in self.encodings:
+            try:
+                content = res.content.decode(encoding)
+                break
+            except UnicodeDecodeError:
+                pass
+        return content
 
     @retry(stop_max_attempt_number=3, wait_fixed=100)
     def _request_html(self):
@@ -64,14 +75,14 @@ class HtmlRequester(object):
             if res.status_code != 200:
                 raise Exception(f'Invalid response from request rod: {res.status_code}')
             self.html_response = res
-            self.html_ = json.loads(res.content.decode('utf-8')).get('html')
+            self.html_ = json.loads(self._decode_response_content(res)).get('html')
         elif request_method == HTML_REQUEST_METHOD_REQUEST:
             # plain request
             res = httpx.get(url, timeout=Timeout(timeout=self.request_rod_duration))
             if res.status_code != 200:
                 raise Exception(f'Invalid response from request: {res.status_code}')
             self.html_response = res
-            self.html_ = res.content.decode('utf-8')
+            self.html_ = self._decode_response_content(res)
         else:
             raise Exception(f'Invalid request method: {request_method}')
 

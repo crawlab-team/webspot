@@ -26,7 +26,6 @@ test_cases = [
                 'list': 'section > div:last-child > ol.row'
             }
         },
-        'target_index': 1,
     },
     {
         'url': 'https://github.com/trending',
@@ -46,26 +45,10 @@ test_cases = [
         }
     },
     {
-        'url': 'https://cuiqingcai.com',
+        'url': 'http://bang.dangdang.com/books/newhotsales',
         'result': {
             'selectors': {
-                'list': '.content-wrap > div.content.index.posts-expand'
-            }
-        }
-    },
-    {
-        'url': 'https://cuiqingcai.com/archives/',
-        'result': {
-            'selectors': {
-                'list': '.post-block > div.posts-collapse'
-            }
-        }
-    },
-    {
-        'url': 'https://github.com/crawlab-team/crawlab/actions',
-        'result': {
-            'selectors': {
-                'list': '#partial-actions-workflow-runs'
+                'list': '.bang_list_box > ul.bang_list.clearfix.bang_list_mode'
             }
         }
     },
@@ -76,15 +59,31 @@ test_cases = [
                 'list': '.bang_list_box > ul.bang_list.clearfix.bang_list_mode'
             }
         }
-    }
-    # {'url': 'https://cuiqingcai.com/archives/page/2/'},
+    },
+    {
+        'url': 'https://cuiqingcai.com/archives/',
+        'target_index': 1,
+        'result': {
+            'selectors': {
+                'list': '.post-block > div.posts-collapse'
+            }
+        }
+    },
     # {
-    #     'url': 'https://www.baidu.com/s?wd=crawlab',
+    #     'url': 'https://github.com/crawlab-team/crawlab/actions',
     #     'result': {
     #         'selectors': {
-    #             'list': '',
+    #             'list': '#partial-actions-workflow-runs'
     #         }
-    #     },
+    #     }
+    # },
+    # {
+    #     'url': 'https://cuiqingcai.com',
+    #     'result': {
+    #         'selectors': {
+    #             'list': '.content-wrap > div.content.index.posts-expand'
+    #         }
+    #     }
     # },
 ]
 

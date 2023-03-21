@@ -256,12 +256,12 @@ class GraphLoader(object):
         child_nodes_idx = [item for sublist in successors.values() for item in sublist]
         return np.array(list(child_nodes_idx))
 
-    def get_node_text_length(self, n: Node) -> int:
+    def get_node_text_length(self, n: Node, max_length: int = 1024) -> int:
         selector = self.get_node_css_selector_path(n)
         el = self._soup.select_one(selector)
         if el is None:
             return 0
-        return len(el.text)
+        return min(len(el.text), max_length)
 
     def get_node_children_by_id(self, id: int) -> List[Node]:
         return [n for n in self.nodes_ if n.parent_id == id]

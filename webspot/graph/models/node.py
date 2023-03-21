@@ -12,15 +12,15 @@ class Node(dict):
         return self.get('parent_id')
 
     @property
-    def features(self) -> List[Tuple[str, str]]:
-        features = []
+    def features(self) -> Tuple[Tuple[str, str]]:
+        features: List[Tuple[str, str]] = []
         for k, v in self.get('features'):
             # skip pseudo-classes
             if k == 'class':
                 if ':' in v:
                     continue
             features.append((k, v))
-        return features
+        return tuple(features)
 
     @property
     def features_dict(self) -> Dict[str, int]:

@@ -41,6 +41,8 @@ class PlainListDetector(BaseDetector):
         node2vec_ratio: float = 1.,
         text_length_discount: float = 1e-2,
         result_name_prefix: str = 'List',
+        max_item_count: int = 10,
+        max_feature_count: int = 10,
         *args,
         **kwargs,
     ):
@@ -53,6 +55,8 @@ class PlainListDetector(BaseDetector):
         self.node2vec_ratio = node2vec_ratio
         self.text_length_discount = text_length_discount
         self.result_name_prefix = result_name_prefix
+        self.max_item_count = max_item_count
+        self.max_feature_count = max_feature_count
 
         # dbscan model
         self.dbscan = DBSCAN(
@@ -311,13 +315,13 @@ class PlainListDetector(BaseDetector):
 
             try:
                 nodes_features_vec = self._get_nodes_features(nodes_idx)
-                nodes_features_vec_norm = normalize(nodes_features_vec.sum(axis=0).reshape(1, -1), norm='l1')
+                nodes_features_vec_idx = np.argwhere(nodes_features_vec.sum(axis=0) > 0).T[0]
 
                 # scores
                 score_text_richness = log_positive(
                     self.graph_loader.get_node_text_length(list_node) * self.text_length_discount)
-                score_complexity = float(entropy(nodes_features_vec_norm, axis=1)[0])
-                score_item_count = log_positive(len(item_nodes))
+                score_complexity = log_positive(min(len(nodes_features_vec_idx), self.max_feature_count))
+                score_item_count = log_positive(min(len(item_nodes), self.max_item_count))
                 logger.debug(f'score_text_richness: {score_text_richness}')
                 logger.debug(f'score_complexity: {score_complexity}')
                 logger.debug(f'score_item_count: {score_item_count}')

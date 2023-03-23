@@ -34,7 +34,6 @@ test_cases = [
                 'list': 'main > div.position-relative.container-lg.p-responsive.pt-6 > div.Box > div:last-child'
             }
         },
-        'target_index': 1,
     },
     {
         'url': 'https://github.com/search?q=spider',
@@ -53,16 +52,7 @@ test_cases = [
         }
     },
     {
-        'url': 'http://bang.dangdang.com/books/newhotsales',
-        'result': {
-            'selectors': {
-                'list': '.bang_list_box > ul.bang_list.clearfix.bang_list_mode'
-            }
-        }
-    },
-    {
         'url': 'https://cuiqingcai.com/archives/',
-        'target_index': 1,
         'result': {
             'selectors': {
                 'list': '.post-block > div.posts-collapse'

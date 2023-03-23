@@ -77,6 +77,11 @@ class GraphLoader(object):
         self.edges_source_tensor = torch.LongTensor()
         self.edges_target_tensor = torch.LongTensor()
         self.nodes_embedded_tensor = torch.LongTensor()
+        self.nodes_text_length_tensor = torch.LongTensor()
+
+        # vectors
+        self.nodes_text_length_vec: Optional[np.ndarray] = None
+        self.nodes_full_text_length_vec: Optional[np.ndarray] = None
 
         # graph
         self.g_dgl: Optional[DGLGraph] = None
@@ -228,12 +233,17 @@ class GraphLoader(object):
     def load_soup(self):
         self._soup = BeautifulSoup(self.html, 'html.parser')
 
+    def load_texts(self):
+        self._nodes_texts = [n.text for n in self.nodes_]
+        self.nodes_text_length_vec = np.array([len(t or []) for t in self._nodes_texts])
+
     def run(self):
         self.load_graph_data()
         self.load_tensors()
         self.load_dgl_graph()
         self.load_embeddings()
         self.load_soup()
+        self.load_texts()
 
     @property
     def nodes(self):
@@ -247,9 +257,13 @@ class GraphLoader(object):
 
     def get_node_children_recursive_by_id(self, id: int) -> List[Node]:
         idx = self.node_ids_enc.transform([id])[0]
-        child_nodes_idx = self.get_node_children_idx_recursive_by_idx(idx)
+        child_nodes_idx = self.get_node_children_idx_recursive_by_id(id)
         child_ids = self.node_ids_enc.inverse_transform([nid for nid in child_nodes_idx if nid != idx])
         return self.get_nodes_by_ids(child_ids)
+
+    def get_node_children_idx_recursive_by_id(self, id: int) -> np.ndarray:
+        idx = self.node_ids_enc.transform([id])[0]
+        return self.get_node_children_idx_recursive_by_idx(idx)
 
     def get_node_children_idx_recursive_by_idx(self, idx: int) -> np.ndarray:
         successors = dfs_successors(G=self.g_nx, source=idx, depth_limit=self.dfs_depth)

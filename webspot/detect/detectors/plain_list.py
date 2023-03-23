@@ -39,8 +39,9 @@ class PlainListDetector(BaseDetector):
         score_threshold: float = 1.,
         min_item_nodes: int = 5,
         node2vec_ratio: float = 1.,
-        text_length_discount: float = 1e-2,
         result_name_prefix: str = 'List',
+        text_length_discount: float = 0.01,
+        max_text_length: float = 1024,
         max_item_count: int = 10,
         max_feature_count: int = 10,
         *args,
@@ -53,8 +54,9 @@ class PlainListDetector(BaseDetector):
         self.score_threshold = score_threshold
         self.min_item_nodes = min_item_nodes
         self.node2vec_ratio = node2vec_ratio
-        self.text_length_discount = text_length_discount
         self.result_name_prefix = result_name_prefix
+        self.text_length_discount = text_length_discount
+        self.max_text_length = max_text_length
         self.max_item_count = max_item_count
         self.max_feature_count = max_feature_count
 
@@ -310,28 +312,39 @@ class PlainListDetector(BaseDetector):
         scores_list = []
         idx: List[int] = []
         for i, list_node, item_nodes in zip(range(len(list_node_list)), list_node_list, item_nodes_list):
-            nodes_ids = np.array([n.id for n in item_nodes])
-            nodes_idx = np.argwhere(np.isin(self.graph_loader.nodes_ids, nodes_ids))
-
+            nodes_ids = np.random.choice(np.array([n.id for n in item_nodes]), size=10)
             try:
-                nodes_features_vec = self._get_nodes_features(nodes_idx)
-                nodes_features_vec_idx = np.argwhere(nodes_features_vec.sum(axis=0) > 0).T[0]
-
-                # scores
-                score_text_richness = log_positive(
-                    self.graph_loader.get_node_text_length(list_node) * self.text_length_discount)
-                score_complexity = log_positive(min(len(nodes_features_vec_idx), self.max_feature_count))
+                score_text_richness = 0
+                score_complexity = 0
+                for node_id in nodes_ids:
+                    child_nodes_idx = self.graph_loader.get_node_children_idx_recursive_by_id(node_id)
+                    if len(child_nodes_idx) == 0:
+                        continue
+                    nodes_text_length_vec = self.graph_loader.nodes_text_length_vec[child_nodes_idx]
+                    nodes_text_length_vec_non_zero = nodes_text_length_vec[nodes_text_length_vec > 0]
+                    _score_text_richness = log_positive(
+                        min(nodes_text_length_vec_non_zero.sum(), self.max_text_length) * self.text_length_discount)
+                    _score_complexity = log_positive(min(len(nodes_text_length_vec_non_zero), self.max_feature_count))
+                    if _score_text_richness > score_text_richness:
+                        score_text_richness = _score_text_richness
+                    if _score_complexity > score_complexity:
+                        score_complexity = _score_complexity
                 score_item_count = log_positive(min(len(item_nodes), self.max_item_count))
+
                 logger.debug(f'score_text_richness: {score_text_richness}')
                 logger.debug(f'score_complexity: {score_complexity}')
                 logger.debug(f'score_item_count: {score_item_count}')
 
                 # score
-                score = score_text_richness * score_complexity * score_item_count
+                score = score_text_richness + score_complexity + score_item_count
                 logger.debug(f'score: {score}')
 
                 # skip score less than threshold
                 if score < self.score_threshold:
+                    continue
+
+                # skip zero sub-score
+                if score_text_richness == 0 or score_complexity == 0 or score_item_count == 0:
                     continue
 
                 # add to scores list

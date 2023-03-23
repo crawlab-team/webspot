@@ -2,39 +2,45 @@
 
 Webspot is an intelligent web service to automatically detect web content and extract information from it.
 
-## Installation
+[Demo](https://webspot.crawlab.net)
 
-Installation of Webspot is easy. Webspot is available on PyPI and can be installed using pip.
+[中文](https://github.com/crawlab-team/webspot/blob/main/README-zh.md)
+
+## Screenshots
+
+### Detected Results
+
+![](./docs/screenshots/screenshot-result-list.png)
+
+### Extracted Fields
+
+![](./docs/screenshots/screenshot-extracted-fields.png)
+
+### Extracted Data
+
+![](./docs/screenshots/screenshot-extracted-data.png)
+
+## Get Started
+
+### Docker
+
+Make sure you have installed [Docker](https://docs.docker.com/) and [Docker Compose](https://docs.docker.com/compose/).
 
 ```bash
-pip install webspot
-```
+# clone git repo
+git clone https://github.com/crawlab-team/webspot
 
-## Usage
-
-Webspot is a command line tool. It can be used to detect web content and extract information from it.
-
-### Web UI
-
-#### Start
-
-Quick start by executing the command below.
-
-```bash
-webspot web
+# start docker containers
+docker-compose up -d
 ```
 
 Then you can access the web UI at http://localhost:80.
 
-#### Options
+## API Reference
 
-```bash
-webspot web --help
-```
+Once you started Webspot, you can go to http://localhost:80/redoc to view the API reference.
 
 ## Architecture
-
-### Overview
 
 The overall process of how Webspot detects meaningful elements from HTML or web pages is shown in the following figure.
 
@@ -50,7 +56,7 @@ graph LR
 
 ## Development
 
-Development with Webspot is easy. You can follow the following guidance to get started.
+You can follow the following guidance to get started.
 
 ### Pre-requisites
 
@@ -63,6 +69,14 @@ Development with Webspot is easy. You can follow the following guidance to get s
 ```bash
 # dependencies
 pip install -r requirements.txt
+```
+
+### Configure Environment Variables
+
+Database configuration is located in `.env` file. You can copy the example file and modify it.
+
+```bash
+cp .env.example .env
 ```
 
 ### Start web server
@@ -90,3 +104,22 @@ webspot
 ├── utils   # utilities
 └── web     # web server
 ```
+
+## TODOs
+
+Webspot is aimed at automating the process of web content detection and extraction. It is far from ready for production
+use. The following features are planned to be implemented in the future.
+
+- [ ] Table detection
+- [ ] Nested list detection
+- [ ] Export to spiders
+- [ ] Advanced browser request
+
+## Community
+
+If you are interested in Webspot, please add the author's WeChat account "tikazyq1" noting "Webspot" to enter the
+discussion group.
+
+<p align="center">
+  <img src="https://crawlab.oss-cn-hangzhou.aliyuncs.com/gitbook/qrcode.png" height="360">
+</p>

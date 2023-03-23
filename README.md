@@ -32,6 +32,22 @@ Then you can access the web UI at http://localhost:80.
 webspot web --help
 ```
 
+## Architecture
+
+### Overview
+
+The overall process of how Webspot detects meaningful elements from HTML or web pages is shown in the following figure.
+
+```mermaid
+graph LR
+    hr[HtmlRequester]
+    gl[GraphLoader]
+    d[Detector]
+    r[Results]
+
+    hr --"html + json"--> gl --"graph"--> d --"output"--> r
+```
+
 ## Development
 
 Development with Webspot is easy. You can follow the following guidance to get started.

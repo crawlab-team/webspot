@@ -30,12 +30,21 @@ body {
 }
 
 .top-navbar .logo-wrapper {
-  margin-right: 10px;
+  margin-right: 18px;
   height: 36px;
+  padding: 0 24px;
+  border-right: var(--color-light-grey) 1px solid;
 }
 
 .top-navbar .logo-wrapper img {
   height: 100%;
+}
+
+.top-navbar .new-request-wrapper {
+  padding: 0 18px 0 0;
+}
+
+.top-navbar .config-wrapper {
 }
 
 .main-container {
@@ -48,9 +57,27 @@ body {
   height: calc(100vh - 48px);
 }
 
+.request-history {
+  max-width: 240px;
+  overflow: auto;
+}
+
+/*.request-history .el-menu {*/
+/*  border-right: none;*/
+/*}*/
+
 .nav-sidebar {
   max-width: 240px;
   overflow: hidden;
+  border-right: 1px solid var(--color-light-grey);
+}
+
+.nav-sidebar .el-tree .el-tree-node {
+  min-height: 56px;
+}
+
+.nav-sidebar .el-tree .el-tree-node__content {
+  min-height: 56px;
 }
 
 .preview-container {
@@ -62,4 +89,33 @@ body {
 
 iframe {
   border: none;
+}
+
+.el-menu-item:focus {
+  background: inherit;
+}
+
+.el-menu-item.is-active {
+  background: var(--el-menu-hover-bg-color);
+}
+
+.error-message-container {
+  width: calc(100% - 240px);
+  height: 100%;
+}
+
+.error-message-container .el-result__extra {
+  width: 100%;
+  max-height: 640px;
+}
+
+.error-message-container .el-result__extra .error-message {
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+  text-align: left;
+  color: var(--color-red);
+  border: 1px solid var(--color-light-grey);
+  padding: 10px;
+  background: #ffffff;
 }

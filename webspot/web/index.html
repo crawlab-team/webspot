@@ -4,9 +4,11 @@
   <link href="//unpkg.com/element-plus/dist/index.css" rel="stylesheet"/>
   <link href="//unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://unpkg.com/vuex@4.1.0/dist//vuex.global.prod.js"></script>
   <script src="//unpkg.com/element-plus"></script>
   <script src="//unpkg.com/@element-plus/icons-vue"></script>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://unpkg.com/js-base64@3.7.5/base64.js"></script>
   <link href="/static/img/favicon.svg" rel="icon">
   <link href="/static/css/style.css" rel="stylesheet">
 </head>
@@ -14,9 +16,11 @@
 <div id="app"></div>
 <script type="module">
   import App from './static/js/app.js';
+  import store from './static/js/store/index.js';
 
   const {createApp} = Vue;
   const app = createApp(App);
+  app.use(store);
   app.use(ElementPlus);
   for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component);

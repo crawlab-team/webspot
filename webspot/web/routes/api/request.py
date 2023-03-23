@@ -20,9 +20,9 @@ from webspot.web.models.payload.request import RequestPayload
 
 
 @app.get('/api/requests')
-async def requests() -> List[RequestOut]:
+async def requests(skip: int = 0, limit: int = 20) -> List[RequestOut]:
     """Get all requests."""
-    docs = Request.objects().order_by('-_id')
+    docs = Request.objects[skip:(skip + limit)].order_by('-_id')
     return [d.to_out() for d in docs]
 
 

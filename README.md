@@ -56,6 +56,7 @@ Development with Webspot is easy. You can follow the following guidance to get s
 
 - Python >=3.8 and <=3.10
 - Go 1.16 or higher
+- MongoDB 4.2 or higher
 
 ### Install dependencies
 

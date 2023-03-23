@@ -203,19 +203,19 @@ class PlainListDetector(BaseDetector):
                 # extract text
                 if n.text is not None and n.text.strip() != '':
                     extract_rule_css = self.graph_loader.get_node_css_selector_path(node=n, root_id=list_id,
-                                                                                    numbered=False)
+                                                                                    numbered=False, no_id=True)
                     fields_extract_rules_set.add((extract_rule_css, FIELD_EXTRACT_RULE_TYPE_TEXT, ''))
 
                 # extract link
                 if n.tag == 'a' and n.attrs.get('href') is not None:
                     extract_rule_css = self.graph_loader.get_node_css_selector_path(node=n, root_id=list_id,
-                                                                                    numbered=False)
+                                                                                    numbered=False, no_id=True)
                     fields_extract_rules_set.add((extract_rule_css, FIELD_EXTRACT_RULE_TYPE_LINK_URL, 'href'))
 
                 # extract image url
                 if n.tag == 'img' and n.attrs.get('src') is not None:
                     extract_rule_css = self.graph_loader.get_node_css_selector_path(node=n, root_id=list_id,
-                                                                                    numbered=False)
+                                                                                    numbered=False, no_id=True)
                     fields_extract_rules_set.add((extract_rule_css, FIELD_EXTRACT_RULE_TYPE_IMAGE_URL, 'src'))
 
             i += 1
@@ -404,7 +404,7 @@ class PlainListDetector(BaseDetector):
             # items node extract rule (css)
             items_selector = Selector(
                 name='items',
-                selector=self.graph_loader.get_node_css_selector_repr(item_nodes[0], False),
+                selector=self.graph_loader.get_node_css_selector_repr(item_nodes[0], False, True),
                 type='css',
             )
 

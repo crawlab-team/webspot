@@ -34,11 +34,11 @@ git clone https://github.com/crawlab-team/webspot
 docker-compose up -d
 ```
 
-然后你可以访问网页界面 http://localhost:80。
+然后你可以访问网页界面 http://localhost:9999。
 
 ## API 参考文档
 
-启动好 Webspot 后，你可以到 http://localhost:80/redoc 查看 API 文档.
+启动好 Webspot 后，你可以到 http://localhost:9999/redoc 查看 API 文档.
 
 ## 架构
 

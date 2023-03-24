@@ -1,4 +1,3 @@
-from typing import Optional, List
 from urllib.parse import urlparse
 
 import numpy as np
@@ -61,6 +60,8 @@ class PaginationDetector(BaseDetector):
         result = self.results[0]
         next_selector = result.selectors.get('next')
         next_el = soup.select_one(next_selector.selector)
+        if next_el is None:
+            return html
 
         add_class(next_el, ['webspot-highlight-container', 'webspot-highlight-node-color__red'])
         add_label(next_el, soup, f'Pagination', 'primary')

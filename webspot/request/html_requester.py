@@ -78,7 +78,7 @@ class HtmlRequester(object):
             self.html_ = json.loads(self._decode_response_content(res)).get('html')
         elif request_method == HTML_REQUEST_METHOD_REQUEST:
             # plain request
-            res = httpx.get(url, timeout=Timeout(timeout=self.request_rod_duration))
+            res = httpx.get(url, timeout=Timeout(timeout=self.request_rod_duration), follow_redirects=True)
             if res.status_code != 200:
                 raise Exception(f'Invalid response from request: {res.status_code}')
             self.html_response = res

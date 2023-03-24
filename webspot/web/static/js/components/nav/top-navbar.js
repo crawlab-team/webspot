@@ -1,4 +1,4 @@
-const {ref, watch, onBeforeMount, h} = Vue;
+const {ref, watch, onBeforeMount, h, computed} = Vue;
 const {useStore} = Vuex;
 const {ElMessageBox} = ElementPlus;
 
@@ -33,10 +33,21 @@ export default {
       await store.dispatch('postRequest', {url: res.value});
     };
 
+    const activeRequest = computed(() => store.getters['activeRequest']);
+
+    const onClickRetry = async () => {
+      await ElMessageBox.confirm('Are you sure to retry?', 'Retry');
+      store.dispatch('postRequest', {
+        url: store.getters['activeRequest'].url,
+      });
+    };
+
     return {
       requestForm,
       updateRequestForm,
       onClickNewRequest,
+      activeRequest,
+      onClickRetry,
     };
   },
   template: `<div class="top-navbar">
@@ -59,5 +70,8 @@ export default {
       <el-option label="Rod (Browser)" value="rod"/>
     </el-select>
   </div>
+  <el-button type="warning" style="margin-left: 12px" icon="refresh" @click="onClickRetry" :disabled="!activeRequest">
+    Retry
+  </el-button>
 </div>`
 };

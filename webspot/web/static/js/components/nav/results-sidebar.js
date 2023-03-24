@@ -75,10 +75,10 @@ export default {
   },
   template: `<div class="nav-sidebar" :style="{flexBasis: isCollapsed ? 'auto' : '240px'}">
   <h2 style="padding: 0 12px; height: 56px; margin: 0; display: flex; align-items: center">Detected Results</h2>
-  <el-tree :data="resultsTree" :props="{class:'item-node'}" default-expand-all @node-click="onClickNode">
+  <el-tree :data="resultsTree" :props="{class:'item-node'}" style="overflow: auto" default-expand-all @node-click="onClickNode">
     <template v-slot="{node, data}">
       <div
-       style="height: 100%; display: flex; align-items: center"
+        style="height: 100%; display: flex; align-items: center"
         :style="{fontSize: data.children ? '16px' : '14px', fontWeight: data.children ? 'bolder' : 'normal'}"
       >
         <el-icon size="16px">

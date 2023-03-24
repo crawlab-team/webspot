@@ -15,6 +15,7 @@ from dgl import DGLGraph
 
 from webspot.graph.models.node import Node
 from webspot.logging import get_logger
+from webspot.utils.selector import is_valid_css_selector
 
 logger = get_logger('webspot.graph.graph_loader')
 
@@ -356,11 +357,11 @@ class GraphLoader(object):
 
     def _get_node_css_selector_repr(self, node: Node, numbered: bool = True, no_id: bool = False) -> str:
         # id
-        if node.feature_id is not None and not no_id:
+        if node.feature_id is not None and not no_id and is_valid_css_selector(f'#{node.feature_id}'):
             return f'{node.feature_tag}#{node.feature_id}'
 
         # class
-        elif len(node.feature_classes) > 0:
+        elif len(node.feature_classes) > 0 and is_valid_css_selector('.'.join(node.feature_classes)):
             if numbered:
                 previous_siblings = self._get_node_previous_siblings_with_classes(node)
                 length = len(previous_siblings) + 1

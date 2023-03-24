@@ -114,6 +114,11 @@ Webspot 旨在自动化网页内容的识别和提取。目前还处于早期阶
 - [ ] Export to spiders
 - [ ] Advanced browser request
 
+## Disclaimer
+
+请遵循当地的法律法规使用 Webspot。作者不对因使用 Webspot 而引起的任何法律问题负责。请阅读 [免责声明](./DISCLAIMER-zh.md)
+了解详情。
+
 ## 社区
 
 如果你对 Webspot 感兴趣，请加作者微信账号 "tikazyq1" 并备注 "Webspot" 进入讨论群。

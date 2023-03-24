@@ -34,11 +34,11 @@ git clone https://github.com/crawlab-team/webspot
 docker-compose up -d
 ```
 
-Then you can access the web UI at http://localhost:80.
+Then you can access the web UI at http://localhost:9999.
 
 ## API Reference
 
-Once you started Webspot, you can go to http://localhost:80/redoc to view the API reference.
+Once you started Webspot, you can go to http://localhost:9999/redoc to view the API reference.
 
 ## Architecture
 

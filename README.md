@@ -115,6 +115,11 @@ use. The following features are planned to be implemented in the future.
 - [ ] Export to spiders
 - [ ] Advanced browser request
 
+## Disclaimer
+
+Please follow the local laws and regulations when using Webspot. The author is not responsible for any legal issues
+caused by. Please read the [Disclaimer](./DISCLAIMER.md) for details.
+
 ## Community
 
 If you are interested in Webspot, please add the author's WeChat account "tikazyq1" noting "Webspot" to enter the

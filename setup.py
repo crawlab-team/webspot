@@ -8,8 +8,8 @@ with open('requirements.txt', 'r') as f:
 
 setup(
     name='webspot',
-    version='0.1.0',
-    packages=find_packages(where='webspot_package'),
+    version='0.1.1',
+    packages=find_packages(where='webspot'),
     url='https://github.com/tikazyq/webspot',
     license='BSD-3-Clause',
     author='tikazyq',
@@ -18,7 +18,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     scripts=[],
-    package_data={'': ['webspot_package']},
+    package_data={'': ['webspot']},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: BSD License",

@@ -8,8 +8,8 @@ with open('requirements.txt', 'r') as f:
 
 setup(
     name='webspot',
-    version='0.1.2',
-    packages=['webspot'],
+    version='0.1.3',
+    packages=find_packages('.'),
     url='https://github.com/tikazyq/webspot',
     license='BSD-3-Clause',
     author='tikazyq',

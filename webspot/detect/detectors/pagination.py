@@ -117,6 +117,8 @@ class PaginationDetector(BaseDetector):
 
         # join the fragments of list into a single string
         corpus = [' '.join(fragments) for fragments in fragments_list]
+        if len(corpus) == 0:
+            return
 
         # fit the vectorizer on the collection
         fragments_list_mat = self.vec.fit_transform(corpus)
@@ -169,6 +171,10 @@ class PaginationDetector(BaseDetector):
         self._calculate_scores_url_path_fragments()
         self._calculate_scores_feature_next()
         self._calculate_scores_text()
+
+        if self.scores_url_path_fragments is None or self.scores_feature_next is None or self.scores_text is None:
+            self.scores = np.array([])
+            return
 
         self._scores = normalize(
             np.concatenate(

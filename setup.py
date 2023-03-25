@@ -8,7 +8,7 @@ with open('requirements.txt', 'r') as f:
 
 setup(
     name='webspot',
-    version='0.1.1',
+    version='0.1.2',
     packages=find_packages(where='webspot'),
     url='https://github.com/tikazyq/webspot',
     license='BSD-3-Clause',

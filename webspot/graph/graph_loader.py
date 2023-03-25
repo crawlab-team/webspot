@@ -416,7 +416,7 @@ class GraphLoader(object):
             # end if parent node is unique-feature
             if not no_id and self.unique_node_feature_id_dict.get(parent.id) is not None:
                 feat = self.unique_node_feature_id_dict.get(parent.id)
-                path.insert(0, self._get_node_css_selector_repr_from_feature(feat))
+                path.insert(0, self.get_node_css_selector_repr(parent, numbered=numbered, no_id=no_id))
                 break
 
             # add to path

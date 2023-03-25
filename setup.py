@@ -9,16 +9,15 @@ with open('requirements.txt', 'r') as f:
 setup(
     name='webspot',
     version='0.1.2',
-    packages=find_packages(where='webspot'),
+    packages=['webspot'],
     url='https://github.com/tikazyq/webspot',
     license='BSD-3-Clause',
     author='tikazyq',
     author_email='tikazyq@163.com',
-    description='A smart web content identification tool',
+    description='An intelligent web service to automatically detect web content and extract information from it.',
     long_description=long_description,
     long_description_content_type="text/markdown",
     scripts=[],
-    package_data={'': ['webspot']},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: BSD License",

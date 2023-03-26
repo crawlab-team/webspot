@@ -52,7 +52,9 @@ def _is_relative_url_path(url: str) -> bool:
     return not re.search(re.escape(url), r'^(https?:)?//')
 
 
-def transform_url(root_url: str, url: str) -> str:
+def transform_url(root_url: str = None, url: str = None) -> str:
+    if root_url is None:
+        return url
     if not _is_relative_url_path(url):
         return url
     return urljoin(root_url, url)

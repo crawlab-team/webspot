@@ -1,10 +1,9 @@
-from urllib.parse import urlparse
+from typing import Optional
 
+import autopager
 import numpy as np
+import parsel
 from bs4 import BeautifulSoup
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.preprocessing import normalize
 
 from webspot.constants.detector import DETECTOR_PAGINATION
 from webspot.detect.detectors.base import BaseDetector
@@ -20,36 +19,13 @@ from webspot.request.html_requester import HtmlRequester
 class PaginationDetector(BaseDetector):
     def __init__(
         self,
-        score_threshold: float = 1.,
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-
-        # settings
-        self.keywords = [
-            'next',
-            '下一页',
-        ]
-        self.escape_feature_names = [
-            'src',
-            'href',
-        ]
-        self.url_sep = '/'
-        self.numeric_mask = '#NUMERIC#'
-        self.score_threshold = score_threshold
-
-        # vectorizer
-        self.vec = TfidfVectorizer()
-
-        # data
-        self.internal_link_nodes = None
-        self.scores_url_path_fragments = None
-        self.scores_feature_next = None
-        self.scores_text = None
-        self._scores = None
-        self._scores_idx = None
-        self._scores_idx_max = None
+        self._at_res: list = []
+        self._el_next: Optional[parsel.selector.Selector] = None
+        self.next_url: Optional[str] = None
 
     def highlight_html(self, html: str, **kwargs) -> str:
         soup = BeautifulSoup(html, 'html.parser')
@@ -71,22 +47,6 @@ class PaginationDetector(BaseDetector):
     @property
     def root_url(self):
         return self.html_requester.url
-
-    def _get_masked_fragment(self, fragment: str):
-        if fragment.isdigit():
-            return self.numeric_mask
-        return fragment
-
-    def _get_url_path_fragment(self, url: str):
-        return [
-            self._get_masked_fragment(f.lower())
-            for f in urlparse(url).path.split(self.url_sep)
-            if f != ''
-        ]
-
-    @property
-    def current_url_path_fragments(self):
-        return self._get_url_path_fragment(self.root_url)
 
     @property
     def link_nodes(self):
@@ -110,119 +70,34 @@ class PaginationDetector(BaseDetector):
         internal_link_nodes_ids_enc = self.graph_loader.node_ids_enc.transform(self.internal_link_nodes_ids)
         return np.argwhere(np.isin(nodes_ids, internal_link_nodes_ids_enc))
 
-    def _calculate_scores_url_path_fragments(self):
-        hrefs = [transform_url(self.root_url, n.attrs.get('href')) for n in self.internal_link_nodes]
-
-        fragments_list = [self._get_url_path_fragment(href) for href in hrefs]
-
-        # join the fragments of list into a single string
-        corpus = [' '.join(fragments) for fragments in fragments_list]
-        if len(corpus) == 0:
-            return
-
-        # fit the vectorizer on the collection
-        fragments_list_mat = self.vec.fit_transform(corpus)
-
-        # transform the current url path fragments
-        current_fragments_vec = self.vec.transform([' '.join(self.current_url_path_fragments)])
-
-        # calculate the cosine similarity
-        self.scores_url_path_fragments = cosine_similarity(fragments_list_mat, current_fragments_vec)
-
-    def _calculate_scores_feature_next(self):
-        feature_names = self.graph_loader.nodes_features_enc.feature_names_
-
-        features_hits = np.zeros(len(feature_names))
-
-        for i, f in enumerate(feature_names):
-            k = f.split('=')[0]
-            if k in self.escape_feature_names:
-                continue
-
-            v = '='.join(f.split('=')[1:])
-            for keyword in self.keywords:
-                if keyword in v.lower():
-                    features_hits[i] = 1
-                    break
-
-        features_hit_idx = np.argwhere(features_hits == 1).T[0]
-
-        internal_nodes_hit_features = self.graph_loader.nodes_features_tensor[
-            self.internal_link_nodes_idx,
-            features_hit_idx,
-        ].detach().numpy()
-
-        normalized_feat = np.array([internal_nodes_hit_features.sum(axis=1)]).T
-
-        self.scores_feature_next = np.log(normalized_feat + 1)
-
-    def _calculate_scores_text(self):
-        texts_hits = np.array([[
-            len(set(n.text.lower().split(' ')).intersection(self.keywords)) > 0 if n.text else False
-            for n in self.internal_link_nodes
-        ]]) * 1
-        texts_hits = texts_hits.T
-        self.scores_text = np.log(texts_hits + 1)
-
-    def _pre_process(self):
-        self._get_internal_link_nodes()
-
     def _train(self) -> np.array:
-        self._calculate_scores_url_path_fragments()
-        self._calculate_scores_feature_next()
-        self._calculate_scores_text()
-
-        if self.scores_url_path_fragments is None or self.scores_feature_next is None or self.scores_text is None:
-            self.scores = np.array([])
+        self._at_res = autopager.extract(self.html_requester.html_)
+        _els_next = [t[1] for t in self._at_res if t[0] == 'NEXT']
+        if len(_els_next) == 0:
             return
-
-        self._scores = normalize(
-            np.concatenate(
-                (
-                    self.scores_url_path_fragments,
-                    self.scores_feature_next,
-                    self.scores_text,
-                ),
-                axis=1,
-            ),
-            norm='l2',
-            axis=1,
-        )
-        self.scores = self._scores.sum(axis=1)
-
-    def _filter(self):
-        self._scores_idx = np.argwhere(self.scores >= self.score_threshold).T[0]
-
-    def _sort(self):
-        if len(self._scores_idx) == 0:
-            return
-
-        _idx = np.argmax(self.scores[self._scores_idx])
-        self._scores_idx_max = self._scores_idx[_idx]
+        self._el_next = _els_next[0]
+        self.next_url = self._el_next.attrib.get('href')
 
     def _extract(self):
-        if self._scores_idx_max is None:
+        if not self.next_url:
             return
 
-        node = self.internal_link_nodes[self._scores_idx_max]
+        _nodes = [n for n in self.link_nodes if
+                  transform_url(self.root_url, n.attrs.get('href')) == transform_url(self.root_url, self.next_url)]
+        if len(_nodes) == 0:
+            return
+        next_node = _nodes[-1]
         next_selector = Selector(
-            name='next',
-            selector=self.graph_loader.get_node_css_selector_path(node),
-            node_id=node.id,
+            name='pagination',
+            selector=self.graph_loader.get_node_css_selector_path(next_node),
+            type='css',
+            node_id=next_node.id,
         )
-        score = self.scores[self._scores_idx_max]
-        score_url_path_fragments = self._scores[self._scores_idx_max][0]
-        score_feature_next = self._scores[self._scores_idx_max][1]
-        score_text = self._scores[self._scores_idx_max][2]
-
+        score = 1.0
         self.results.append(Result(
             name='Next',
             score=score,
-            scores={
-                'url_path_fragments': score_url_path_fragments,
-                'feature_next': score_feature_next,
-                'text': score_text,
-            },
+            scores={'score': score},
             selectors={
                 'next': next_selector,
             },
@@ -230,13 +105,7 @@ class PaginationDetector(BaseDetector):
         ))
 
     def run(self):
-        self._pre_process()
-
         self._train()
-
-        self._filter()
-
-        self._sort()
 
         self._extract()
 

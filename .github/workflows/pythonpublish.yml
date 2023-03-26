@@ -34,6 +34,7 @@ jobs:
 #          python -m unittest webspot.test
 
       - name: Check version
+        continue-on-error: true
         run: |
           version=`python setup.py --version`
           res=`curl https://pypi.org/project/${{ env.PACKAGE_NAME }}/${version}/ -i -s | grep 'HTTP/2 404'`

@@ -57,7 +57,7 @@ async def request(payload: RequestPayload = Body(
         'method': 'request',
         'no_async': False,
         'detectors': ['plain_list', 'pagination'],
-        'duration': 30,
+        'duration': 5,
     }
 )) -> RequestOut:
     """Create a request. This is used to generate a new request to detect a web page."""

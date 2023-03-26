@@ -14,7 +14,7 @@ from webspot.constants.html_request_method import HTML_REQUEST_METHOD_REQUEST, H
 from webspot.detect.utils.transform_html_links import transform_html_links
 
 DEFAULT_REQUEST_ROD_URL = 'http://localhost:7777/request'
-DEFAULT_REQUEST_ROD_DURATION = 30
+DEFAULT_REQUEST_ROD_DURATION = 5
 DEFAULT_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data'))
 
 
@@ -72,6 +72,7 @@ class HtmlRequester(object):
                 request_rod_url,
                 json={'url': url, 'duration': request_rod_duration},
                 headers={'Content-Type': 'application/json'},
+                timeout=60,
             )
             if res.status_code != 200:
                 raise Exception(f'Invalid response from request rod: {res.status_code}')

@@ -21,24 +21,6 @@ export default {
             {{ result.score.toFixed(2) }}
           </el-tag>
         </el-tooltip>
-        <el-tooltip content="Sub-Score (URL Path Fragments)">
-          <el-tag type="info" style="margin-right: 5px">
-            <i class="fa fa-at"></i>
-            {{ result.scores.url_path_fragments.toFixed(2) }}
-          </el-tag>
-        </el-tooltip>
-        <el-tooltip content="Sub-Score (Feature Next)">
-          <el-tag type="info" style="margin-right: 5px">
-            <i class="fa fa-caret-right"></i>
-            {{ result.scores.feature_next.toFixed(2) }}
-          </el-tag>
-        </el-tooltip>
-        <el-tooltip content="Sub-Score (Text)">
-          <el-tag type="info" style="margin-right: 5px">
-            <i class="fa fa-file-text"></i>
-            {{ result.scores.text.toFixed(2) }}
-          </el-tag>
-        </el-tooltip>
       </el-form-item>
       <el-form-item label="Selector Type">
         <el-radio-group v-model="selectorType">

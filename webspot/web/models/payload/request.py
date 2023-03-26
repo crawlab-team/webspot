@@ -30,7 +30,7 @@ class RequestPayload(BaseModel):
         description='The detectors to run on the page.',
     )
     duration: Optional[int] = Field(
-        default=30,
+        default=5,
         title='Duration (seconds)',
         description='The duration to request the page (method "rod" only)',
     )

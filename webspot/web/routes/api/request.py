@@ -53,6 +53,7 @@ async def request(id: str) -> RequestOut:
 async def request(payload: RequestPayload = Body(
     example={
         'url': 'https://quotes.toscrape.com',
+        'html': '<html>...</html>',
         'method': 'request',
         'no_async': False,
         'detectors': ['plain_list', 'pagination'],
@@ -62,12 +63,16 @@ async def request(payload: RequestPayload = Body(
     """Create a request. This is used to generate a new request to detect a web page."""
     d = Request(
         url=payload.url,
+        html=payload.html,
         method=payload.method,
         no_async=payload.no_async,
         detectors=payload.detectors,
         duration=payload.duration,
     )
     d.save()
+
+    if payload.html:
+        d.no_async = True
 
     if d.no_async:
         # run request (sync)
@@ -91,6 +96,7 @@ def _run_request(d: Request):
         tic = datetime.now()
         html_requester = HtmlRequester(
             url=d.url,
+            html=d.html,
             request_method=d.method,
             request_rod_duration=d.duration,
         )

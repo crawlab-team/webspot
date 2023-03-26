@@ -22,6 +22,7 @@ class HtmlRequester(object):
     def __init__(
         self,
         url: str = None,
+        html: str = None,
         html_path: str = None,
         request_method: str = HTML_REQUEST_METHOD_REQUEST,
         request_rod_url: str = DEFAULT_REQUEST_ROD_URL,
@@ -38,7 +39,7 @@ class HtmlRequester(object):
         self.encodings = ['utf-8', 'gbk', 'iso-8859-1', 'cp1252']
 
         # data
-        self.html_: Optional[str] = None
+        self.html_: Optional[str] = html
         self.html_response: Optional[Response] = None
         self.json_data: Optional[dict] = None
 
@@ -126,10 +127,12 @@ class HtmlRequester(object):
 
     def run(self):
         # request html page if url exists
-        if self.url:
-            self._request_html()
+        if self.html_:
+            pass
         elif self.html_path:
             self._load_html()
+        elif self.url:
+            self._request_html()
         else:
             raise Exception('No url or html path provided')
 

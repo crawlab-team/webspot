@@ -11,7 +11,7 @@ from webspot.models.base import Base, BaseOut
 
 
 class RequestOut(BaseOut):
-    url: str
+    url: Optional[str]
     method: Optional[str]
     duration: Optional[int]
     status: Optional[str]

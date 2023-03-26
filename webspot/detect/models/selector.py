@@ -8,3 +8,4 @@ class Selector(BaseModel):
     selector: str
     type: Optional[str]
     attribute: Optional[str]
+    node_id: Optional[int]

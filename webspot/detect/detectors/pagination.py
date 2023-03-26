@@ -205,7 +205,11 @@ class PaginationDetector(BaseDetector):
             return
 
         node = self.internal_link_nodes[self._scores_idx_max]
-        next_selector = Selector(name='next', selector=self.graph_loader.get_node_css_selector_path(node))
+        next_selector = Selector(
+            name='next',
+            selector=self.graph_loader.get_node_css_selector_path(node),
+            node_id=node.id,
+        )
         score = self.scores[self._scores_idx_max]
         score_url_path_fragments = self._scores[self._scores_idx_max][0]
         score_feature_next = self._scores[self._scores_idx_max][1]

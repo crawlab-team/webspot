@@ -399,6 +399,7 @@ class PlainListDetector(BaseDetector):
                 name='list',
                 selector=self.graph_loader.get_node_css_selector_path(list_node),
                 type='css',
+                node_id=list_node.id,
             )
 
             # items node extract rule (css)

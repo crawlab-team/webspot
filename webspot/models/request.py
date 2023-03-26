@@ -39,7 +39,7 @@ class Request(Base):
     detectors = ListField(default=[DETECTOR_PLAIN_LIST, DETECTOR_PAGINATION])
     execution_time = DictField(default={})
 
-    def to_out(self) -> BaseOut:
+    def to_out(self) -> RequestOut:
         return RequestOut(
             id=str(self.id),
             created_at=self.created_at,

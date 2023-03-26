@@ -14,7 +14,7 @@ from webspot.constants.html_request_method import HTML_REQUEST_METHOD_REQUEST, H
 from webspot.detect.utils.transform_html_links import transform_html_links
 
 DEFAULT_REQUEST_ROD_URL = 'http://localhost:7777/request'
-DEFAULT_REQUEST_ROD_DURATION = 10
+DEFAULT_REQUEST_ROD_DURATION = 30
 DEFAULT_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data'))
 
 

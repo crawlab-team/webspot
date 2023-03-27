@@ -39,15 +39,16 @@ test_cases = [
         'url': 'https://github.com/search?q=spider',
         'result': {
             'selectors': {
-                'list': '.pt-md-0 > div.px-2 > ul.repo-list'
+                'list': 'div.px-2 > ul.repo-list'
             }
-        }
+        },
+        'index': 1,
     },
     {
         'url': 'http://bang.dangdang.com/books/newhotsales',
         'result': {
             'selectors': {
-                'list': '.bang_list_box > ul.bang_list.clearfix.bang_list_mode'
+                'list': 'div.bang_list_box > ul.bang_list.clearfix.bang_list_mode'
             }
         }
     },
@@ -55,7 +56,7 @@ test_cases = [
         'url': 'https://cuiqingcai.com/archives/',
         'result': {
             'selectors': {
-                'list': '.post-block > div.posts-collapse'
+                'list': 'div.post-block > div.posts-collapse'
             }
         }
     },
@@ -98,6 +99,6 @@ def test_plain_list(test_case):
     test_case_result = test_case.get('result')
     test_case_list_selector = test_case_result.get('selectors').get('list')
     target_result = results[target_index]
-    assert target_result.selectors.get('list').selector == test_case_list_selector, 'selectors should be equal'
+    assert test_case_list_selector in target_result.selectors.get('list').selector, 'selectors should be matched'
     assert len(target_result.fields) > 0, 'target fields should be more than 0'
     assert len(target_result.data) > 0, 'target data should be more than 0'

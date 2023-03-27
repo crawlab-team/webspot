@@ -72,6 +72,11 @@ body {
   border-right: 1px solid var(--color-light-grey);
 }
 
+.nav-sidebar .el-tree {
+  height: calc(100% - 56px);
+  overflow: auto;
+}
+
 .nav-sidebar .el-tree .el-tree-node {
   min-height: 56px;
 }

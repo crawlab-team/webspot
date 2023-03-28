@@ -38,7 +38,7 @@ class PlainListDetector(BaseDetector):
         dbscan_n_jobs: int = -1,
         entropy_threshold: float = 1e-3,
         score_threshold: float = 1.,
-        min_item_nodes: int = 10,
+        min_item_nodes: int = 8,
         node2vec_ratio: float = 1.,
         result_name_prefix: str = 'List',
         text_length_discount: float = 0.01,
@@ -226,7 +226,7 @@ class PlainListDetector(BaseDetector):
             i += 1
 
         for i, (item, count) in enumerate(fields_extract_rules_dict.items()):
-            if count / self.min_item_nodes < self.min_item_nodes_ratio:
+            if float(count) / self.min_item_nodes < self.min_item_nodes_ratio:
                 continue
             extract_rule_css, type_, attribute = item
             name = f'Field_{type_}_{i + 1}'

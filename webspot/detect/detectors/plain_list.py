@@ -38,7 +38,7 @@ class PlainListDetector(BaseDetector):
         dbscan_n_jobs: int = -1,
         entropy_threshold: float = 1e-3,
         score_threshold: float = 1.,
-        min_item_nodes: int = 5,
+        min_item_nodes: int = 10,
         node2vec_ratio: float = 1.,
         result_name_prefix: str = 'List',
         text_length_discount: float = 0.01,
@@ -46,6 +46,7 @@ class PlainListDetector(BaseDetector):
         max_item_count: int = 10,
         min_item_nodes_ratio: float = 0.5,
         max_feature_count: int = 10,
+        max_result_count: int = 10,
         *args,
         **kwargs,
     ):
@@ -62,6 +63,7 @@ class PlainListDetector(BaseDetector):
         self.max_item_count = max_item_count
         self.min_item_nodes_ratio = min_item_nodes_ratio
         self.max_feature_count = max_feature_count
+        self.max_result_count = max_result_count
 
         # dbscan model
         self.dbscan = DBSCAN(
@@ -393,6 +395,10 @@ class PlainListDetector(BaseDetector):
                                                            item_nodes_list,
                                                            score_list,
                                                            scores_list):
+            # break if max result count reached
+            if i == self.max_result_count:
+                break
+
             # list node
             list_node = list_node
 

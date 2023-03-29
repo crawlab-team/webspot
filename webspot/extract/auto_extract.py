@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List
 
 from webspot.constants.detector import DETECTOR_PAGINATION, DETECTOR_PLAIN_LIST
 from webspot.detect.detectors.pagination import PaginationDetector

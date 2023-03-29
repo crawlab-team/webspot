@@ -12,8 +12,6 @@ from webspot.detect.models.selector import Selector
 from webspot.detect.utils.highlight_html import add_class, add_label
 from webspot.detect.utils.transform_html_links import transform_url
 from webspot.detect.utils.url import get_url_domain
-from webspot.graph.graph_loader import GraphLoader
-from webspot.request.html_requester import HtmlRequester
 
 
 class PaginationDetector(BaseDetector):

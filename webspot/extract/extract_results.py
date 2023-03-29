@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List
 
 from webspot.constants.detector import DETECTOR_PAGINATION, DETECTOR_PLAIN_LIST
+from webspot.constants.html_request_method import HTML_REQUEST_METHOD_REQUEST
 from webspot.detect.detectors.pagination import PaginationDetector
 from webspot.detect.detectors.plain_list import PlainListDetector
 from webspot.graph.graph_loader import GraphLoader
@@ -15,6 +16,9 @@ def extract_rules(
     html: str = None,
     detectors: List[str] = None,
 ):
+    if method is None or method == '':
+        method = HTML_REQUEST_METHOD_REQUEST
+
     if detectors is None:
         detectors = [DETECTOR_PLAIN_LIST, DETECTOR_PAGINATION]
 

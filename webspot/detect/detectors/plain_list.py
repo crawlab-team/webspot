@@ -38,6 +38,7 @@ class PlainListDetector(BaseDetector):
         dbscan_n_jobs: int = -1,
         entropy_threshold: float = 1e-3,
         score_threshold: float = 1.,
+        sample_item_nodes: int = 10,
         min_item_nodes: int = 5,
         node2vec_ratio: float = 1.,
         result_name_prefix: str = 'List',
@@ -55,6 +56,7 @@ class PlainListDetector(BaseDetector):
         # settings
         self.entropy_threshold = entropy_threshold
         self.score_threshold = score_threshold
+        self.sample_item_nodes = sample_item_nodes
         self.min_item_nodes = min_item_nodes
         self.node2vec_ratio = node2vec_ratio
         self.result_name_prefix = result_name_prefix
@@ -192,7 +194,7 @@ class PlainListDetector(BaseDetector):
 
         # iterate list child nodes
         i = 0
-        for c in np.random.choice(list_child_nodes, self.min_item_nodes):
+        for c in np.random.choice(list_child_nodes, self.sample_item_nodes):
             if c.tag != item_nodes[0].tag:
                 continue
 

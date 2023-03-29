@@ -11,6 +11,7 @@ from webspot.constants.request_status import REQUEST_STATUS_SUCCESS, REQUEST_STA
 from webspot.detect.detectors.pagination import PaginationDetector
 from webspot.detect.detectors.plain_list import PlainListDetector
 from webspot.detect.utils.highlight_html import embed_highlight_css
+from webspot.extract.auto_extract import auto_extract
 from webspot.graph.graph_loader import GraphLoader
 from webspot.models.request import Request, RequestOut
 from webspot.request.html_requester import HtmlRequester
@@ -86,67 +87,24 @@ async def request(payload: RequestPayload = Body(
 
 
 def _run_request(d: Request):
-    execution_time = {
-        'html_requester': None,
-        'graph_loader': None,
-        'detectors': {},
-    }
     try:
-        # html requester
-        tic = datetime.now()
-        html_requester = HtmlRequester(
+        results, execution_time, html_requester, graph_loader, detectors = auto_extract(
             url=d.url,
+            method=d.method,
+            duration=d.duration,
             html=d.html,
-            request_method=d.method,
-            request_rod_duration=d.duration,
+            detectors=d.detectors,
         )
-        html_requester.run()
-        execution_time['html_requester'] = round((datetime.now() - tic).total_seconds() * 1000)
-
-        # graph loader
-        tic = datetime.now()
-        graph_loader = GraphLoader(
-            html=html_requester.html_,
-            json_data=html_requester.json_data,
-        )
-        graph_loader.run()
-        execution_time['graph_loader'] = round((datetime.now() - tic).total_seconds() * 1000)
-
-        # run detectors
-        html = html_requester.html
-        for detector_name in d.detectors:
-            # start time
-            tic = datetime.now()
-
-            # detector class
-            if detector_name == DETECTOR_PLAIN_LIST:
-                detector_cls = PlainListDetector
-            elif detector_name == DETECTOR_PAGINATION:
-                detector_cls = PaginationDetector
-            else:
-                raise Exception(f'Invalid detector: {detector_name}')
-
-            # run detector
-            detector = detector_cls(
-                graph_loader=graph_loader,
-                html_requester=html_requester,
-            )
-            detector.run()
-
-            # highlight html
-            html = detector.highlight_html(html)
-
-            # add to results
-            d.results[detector_name] = [r.dict() for r in detector.results]
-
-            # execution time
-            execution_time['detectors'][detector_name] = round((datetime.now() - tic).total_seconds() * 1000)
 
         # update request
         d.status = REQUEST_STATUS_SUCCESS
         d.html = html_requester.html_
+        html = html_requester.html
+        for detector in detectors:
+            html = detector.highlight_html(html)
         d.html_highlighted = html
         d.execution_time = execution_time
+        d.results = results
         d.save()
 
     except Exception as e:

@@ -32,13 +32,13 @@ logger = get_logger('webspot.detect.detectors.plain_list')
 class PlainListDetector(BaseDetector):
     def __init__(
         self,
-        dbscan_eps: float = 0.3,
+        dbscan_eps: float = 0.5,
         dbscan_min_samples: int = 3,
         dbscan_metric: str = 'euclidean',
         dbscan_n_jobs: int = -1,
         entropy_threshold: float = 1e-3,
         score_threshold: float = 1.,
-        min_item_nodes: int = 8,
+        min_item_nodes: int = 5,
         node2vec_ratio: float = 1.,
         result_name_prefix: str = 'List',
         text_length_discount: float = 0.01,
@@ -206,19 +206,19 @@ class PlainListDetector(BaseDetector):
             # iterate item child nodes
             for n in item_child_nodes:
                 # extract text
-                if n.text is not None and n.text.strip() != '':
+                if n.text is not None and len(n.text.strip()) > 0:
                     extract_rule_css = self.graph_loader.get_node_css_selector_path(node=n, root_id=list_id,
                                                                                     numbered=False, no_id=True)
                     fields_extract_rules_dict[(extract_rule_css, FIELD_EXTRACT_RULE_TYPE_TEXT, '')] += 1
 
                 # extract link
-                if n.tag == 'a' and n.attrs.get('href') is not None:
+                if n.tag == 'a' and n.attrs.get('href') is not None and len(n.attrs.get('href').strip()) > 0:
                     extract_rule_css = self.graph_loader.get_node_css_selector_path(node=n, root_id=list_id,
                                                                                     numbered=False, no_id=True)
                     fields_extract_rules_dict[(extract_rule_css, FIELD_EXTRACT_RULE_TYPE_LINK_URL, 'href')] += 1
 
                 # extract image url
-                if n.tag == 'img' and n.attrs.get('src') is not None:
+                if n.tag == 'img' and n.attrs.get('src') is not None and len(n.attrs.get('src').strip()) > 0:
                     extract_rule_css = self.graph_loader.get_node_css_selector_path(node=n, root_id=list_id,
                                                                                     numbered=False, no_id=True)
                     fields_extract_rules_dict[(extract_rule_css, FIELD_EXTRACT_RULE_TYPE_IMAGE_URL, 'src')] += 1
@@ -456,8 +456,6 @@ class PlainListDetector(BaseDetector):
             if len(result.data) < self.min_item_nodes:
                 del results[i]
                 i -= 1
-
-            # prune fields
 
         return results
 

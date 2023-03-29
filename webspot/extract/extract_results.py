@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 
 from webspot.constants.detector import DETECTOR_PAGINATION, DETECTOR_PLAIN_LIST
 from webspot.detect.detectors.pagination import PaginationDetector
@@ -7,12 +8,12 @@ from webspot.graph.graph_loader import GraphLoader
 from webspot.request.html_requester import HtmlRequester
 
 
-def auto_extract(
+def extract_rules(
     url: str = None,
     method: str = None,
     duration: int = None,
     html: str = None,
-    detectors=None,
+    detectors: List[str] = None,
 ):
     if detectors is None:
         detectors = [DETECTOR_PLAIN_LIST, DETECTOR_PAGINATION]

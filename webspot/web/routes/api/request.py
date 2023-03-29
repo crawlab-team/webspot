@@ -11,7 +11,7 @@ from webspot.constants.request_status import REQUEST_STATUS_SUCCESS, REQUEST_STA
 from webspot.detect.detectors.pagination import PaginationDetector
 from webspot.detect.detectors.plain_list import PlainListDetector
 from webspot.detect.utils.highlight_html import embed_highlight_css
-from webspot.extract.auto_extract import auto_extract
+from webspot.extract.extract_results import extract_rules
 from webspot.graph.graph_loader import GraphLoader
 from webspot.models.request import Request, RequestOut
 from webspot.request.html_requester import HtmlRequester
@@ -88,7 +88,7 @@ async def request(payload: RequestPayload = Body(
 
 def _run_request(d: Request):
     try:
-        results, execution_time, html_requester, graph_loader, detectors = auto_extract(
+        results, execution_time, html_requester, graph_loader, detectors = extract_rules(
             url=d.url,
             method=d.method,
             duration=d.duration,

@@ -11,5 +11,6 @@ func GetHtml(requestUrl string, duration int) string {
 		time.Sleep(time.Duration(duration) * time.Second)
 	}
 	html := page.MustHTML()
+	page.MustClose()
 	return html
 }

@@ -1,6 +1,5 @@
 import threading
 import traceback
-from datetime import datetime
 from typing import List
 
 from bs4 import BeautifulSoup
@@ -26,7 +25,7 @@ from webspot.web.models.payload.request import RequestPayload
 
 
 @app.get('/api/requests')
-async def requests(skip: int = 0, limit: int = 20) -> List[RequestOut]:
+async def requests(skip: int = 0, limit: int = 10) -> List[RequestOut]:
     """Get all requests."""
     docs = Request.objects[skip:(skip + limit)].order_by('-_id')
     return [d.to_out() for d in docs]

@@ -1,5 +1,6 @@
 const {ref, computed, watch, onMounted} = Vue;
 const {useStore} = Vuex;
+const {ElMessageBox} = ElementPlus;
 
 export default {
   name: 'PreviewContainer',
@@ -8,8 +9,9 @@ export default {
 
     const activeRequestId = computed(() => store.state.activeRequestId);
 
-    // const activeRequestHtmlHighlighted = computed(() => convertToBase64(store.getters.activeRequestHtmlHighlighted));
-    const activeRequestHtmlSrc = computed(() => `/api/requests/${activeRequestId.value}/html`);
+    const previewMode = computed(() => store.getters.previewMode);
+
+    const activeRequestHtmlSrc = computed(() => `/api/requests/${activeRequestId.value}/html?mode=${previewMode.value}`);
 
     const isLoading = ref(false);
 
@@ -22,6 +24,14 @@ export default {
 
     watch(() => activeRequestId.value, invokeLoading);
     onMounted(invokeLoading);
+
+    window.addEventListener('message', async (event) => {
+      const nodeId = event.data;
+      const res = await axios.get(`/api/requests/${activeRequestId.value}/nodes/${nodeId}`);
+      console.debug(res.data);
+      // await ElMessageBox.alert(event.data)
+      // console.debug(event.data);
+    }, false);
 
     return {
       activeRequestHtmlSrc,

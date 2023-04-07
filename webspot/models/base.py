@@ -10,8 +10,8 @@ from webspot.utils.mongo import encode_mongo_document
 
 
 class BaseOut(BaseModel):
-    id: str
-    created_at: datetime
+    id: Optional[str]
+    created_at: Optional[datetime]
     created_by: Optional[str]
     updated_at: Optional[datetime]
     updated_by: Optional[str]

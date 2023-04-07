@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 
 import html_to_json_enhanced
 import httpx
+from html_to_json_enhanced.convert_html import HtmlConverter
 from httpx import Timeout
 from requests import Response
 from retrying import retry
@@ -45,6 +46,9 @@ class HtmlRequester(object):
 
         # logger
         self.logger = logging.getLogger('webspot.request.html_requester')
+
+        # html converter
+        self.html_converter: Optional[HtmlConverter] = None
 
     def _decode_response_content(self, res: Response) -> str:
         content = ''
@@ -88,36 +92,39 @@ class HtmlRequester(object):
         else:
             raise Exception(f'Invalid request method: {request_method}')
 
+    def _convert_to_json(self):
         # convert html to json data
-        self.json_data = html_to_json_enhanced.convert(self.html_, with_id=True)
+        self.html_converter = HtmlConverter(self.html_)
+        self.json_data = self.html_converter.convert()
+        self.html_ = str(self.html_converter.soup)
 
-        if self.save:
-            # domain
-            domain = urlparse(url).netloc
+    def _save(self):
+        # domain
+        domain = urlparse(self.url).netloc
 
-            # create data html directory if not exists
-            data_html_dir = os.path.join(DEFAULT_DATA_DIR, domain, 'html')
-            if not os.path.exists(data_html_dir):
-                os.makedirs(data_html_dir)
+        # create data html directory if not exists
+        data_html_dir = os.path.join(DEFAULT_DATA_DIR, domain, 'html')
+        if not os.path.exists(data_html_dir):
+            os.makedirs(data_html_dir)
 
-            # create data json directory if not exists
-            data_json_dir = os.path.join(DEFAULT_DATA_DIR, domain, 'json')
-            if not os.path.exists(data_json_dir):
-                os.makedirs(data_json_dir)
+        # create data json directory if not exists
+        data_json_dir = os.path.join(DEFAULT_DATA_DIR, domain, 'json')
+        if not os.path.exists(data_json_dir):
+            os.makedirs(data_json_dir)
 
-            # file name prefix
-            filename_prefix = url.replace('/', '_').replace(':', '_').replace('.', '_')
+        # file name prefix
+        filename_prefix = self.url.replace('/', '_').replace(':', '_').replace('.', '_')
 
-            # save response html
-            data_html_dir = os.path.join(DEFAULT_DATA_DIR, domain, 'html')
-            filename = os.path.join(data_html_dir, f'{filename_prefix}.html')
-            with open(filename, 'w') as f:
-                f.write(self.html_)
+        # save response html
+        data_html_dir = os.path.join(DEFAULT_DATA_DIR, domain, 'html')
+        filename = os.path.join(data_html_dir, f'{filename_prefix}.html')
+        with open(filename, 'w') as f:
+            f.write(self.html_)
 
-            # save response json
-            filename = os.path.join(data_json_dir, f'{filename_prefix}.json')
-            with open(filename, 'w') as f:
-                f.write(json.dumps(self.json_data))
+        # save response json
+        filename = os.path.join(data_json_dir, f'{filename_prefix}.json')
+        with open(filename, 'w') as f:
+            f.write(json.dumps(self.json_data))
 
     def _load_html(self):
         # print info
@@ -138,6 +145,13 @@ class HtmlRequester(object):
             raise Exception('No url or html path provided')
 
         assert self.html_ is not None, 'No html obtained!'
+
+        # convert html to json data
+        self._convert_to_json()
+
+        # save
+        if self.save:
+            self._save()
 
     @property
     def html(self):

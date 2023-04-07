@@ -5,7 +5,7 @@ import (
 )
 
 func GetHtml(requestUrl string, duration int) string {
-	page := GetBrowser().MustConnect().MustPage()
+	page := GetBrowser().MustPage()
 	page.MustNavigate(requestUrl).MustWaitLoad()
 	if duration > 0 {
 		time.Sleep(time.Duration(duration) * time.Second)

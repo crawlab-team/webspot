@@ -4,20 +4,58 @@ from typing import List
 
 from bs4 import BeautifulSoup, Tag
 
-from webspot.detect.models.list_result import ListResult
 
-
-def get_embed_css() -> str:
-    file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../web/static/css/highlight.css'))
+def get_embed_highlight_css() -> str:
+    file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../web/static/css/embed/highlight.css'))
     with open(file_path, 'r') as f:
         return f.read()
 
 
-def embed_highlight_css(html: str) -> str:
+def get_embed_annotate_css() -> str:
+    file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../web/static/css/embed/annotate.css'))
+    with open(file_path, 'r') as f:
+        return f.read()
+
+
+def get_embed_annotate_js() -> str:
+    file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../web/static/js/embed/annotate.js'))
+    with open(file_path, 'r') as f:
+        return f.read()
+
+
+def embed_highlight(html: str) -> str:
+    # soup
     soup = BeautifulSoup(html, 'html.parser')
+
+    # css
     style_el = soup.new_tag('style')
-    style_el.append(get_embed_css())
+    style_el.append(get_embed_highlight_css())
     soup.select_one('head').append(style_el)
+
+    # html
+    return str(soup)
+
+
+def embed_annotate(html: str) -> str:
+    # soup
+    soup = BeautifulSoup(html, 'html.parser')
+
+    # css
+    style_el = soup.new_tag('style')
+    style_el.append(get_embed_annotate_css())
+    soup.select_one('head').append(style_el)
+
+    # js
+    script_el = soup.new_tag('script')
+    script_el.append(get_embed_annotate_js())
+    body_el = soup.select_one('body')
+    body_el.append(script_el)
+
+    # links
+    for a_el in soup.select('a'):
+        a_el.attrs['href'] = 'javascript:'
+
+    # html
     return str(soup)
 
 

@@ -16,6 +16,7 @@ const store = createStore({
       activeResult: undefined,
       activeResultTabName: 'overview',
       activeResultDialogVisible: false,
+      previewMode: undefined,
     };
   },
   getters: {
@@ -30,12 +31,6 @@ const store = createStore({
     },
     activeRequestResults(state, getters) {
       return getters.activeRequest ? getters.activeRequest.results : [];
-    },
-    activeRequestHtml(state, getters) {
-      return getters.activeRequest ? getters.activeRequest.html : '';
-    },
-    activeRequestHtmlHighlighted(state, getters) {
-      return getters.activeRequest ? getters.activeRequest.html_highlighted : '';
     },
     activeRequestFormattedError(state, getters) {
       if (!getters.activeRequest) return '';
@@ -61,6 +56,13 @@ const store = createStore({
     },
     activeResultName(state) {
       return state.activeResult ? state.activeResult.name : '';
+    },
+    previewMode(state) {
+      if (state.previewMode) {
+        return state.previewMode;
+      }
+      state.previewMode = localStorage.getItem('previewMode') || 'highlight';
+      return state.previewMode;
     },
   },
   mutations: {
@@ -96,7 +98,11 @@ const store = createStore({
     },
     setActiveResultDialogVisible(state, visible) {
       state.activeResultDialogVisible = visible;
-    }
+    },
+    setPreviewMode(state, mode) {
+      state.previewMode = mode;
+      localStorage.setItem('previewMode', mode);
+    },
   },
   actions: {
     async getRequests({commit, state}) {
@@ -128,6 +134,8 @@ const store = createStore({
 
       // Set result id as active
       commit('setActiveRequestId', res.data.id);
+    },
+    async getRequestNode({commit, state}) {
     },
   }
 });

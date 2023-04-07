@@ -1,0 +1,45 @@
+:root {
+  --color-green: #67C23A;
+  --color-blue: #409EFF;
+  --color-cyan: #5CB3FF;
+  --color-purple: #B37FEB;
+  --color-pink: #F78FB3;
+  --color-red: #F56C6C;
+  --color-orange: #E6A23C;
+  --color-light-grey: #EEEEEE;
+  --color-grey: #AAAAAA;
+}
+
+*::before {
+  background: transparent;
+  content: "";
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  z-index: -1;
+}
+
+*:hover::before {
+  /*opacity: 0.15;*/
+  /*border: 3px solid var(--color-orange);*/
+  /*background: var(--color-blue);*/
+  /*cursor: pointer;*/
+}
+
+/*div:hover {*/
+/*  !*opacity: 0.15;*!*/
+/*  outline: 1px solid var(--color-blue);*/
+/*  !*background: var(--color-blue);*!*/
+/*  !*cursor: pointer;*!*/
+/*}*/
+
+[highlighted="true"]::before {
+  border: 3px solid var(--color-blue);
+  /*background: var(--color-blue);*/
+  padding: 2px;
+  z-index: 0;
+}

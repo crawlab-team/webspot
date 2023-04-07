@@ -3,19 +3,25 @@ import traceback
 from datetime import datetime
 from typing import List
 
+from bs4 import BeautifulSoup
 from fastapi import Body
+from html_to_json_enhanced import convert
 from starlette.responses import HTMLResponse
 
 from webspot.constants.detector import DETECTOR_PLAIN_LIST, DETECTOR_PAGINATION
 from webspot.constants.request_status import REQUEST_STATUS_SUCCESS, REQUEST_STATUS_ERROR
 from webspot.detect.detectors.pagination import PaginationDetector
 from webspot.detect.detectors.plain_list import PlainListDetector
-from webspot.detect.utils.highlight_html import embed_highlight_css
+from webspot.detect.utils.highlight_html import embed_highlight, embed_annotate
+from webspot.detect.utils.transform_html_links import transform_html_links
+from webspot.extract.extract_results import extract_rules
 from webspot.graph.graph_loader import GraphLoader
+from webspot.models.node import NodeOut, Node
 from webspot.models.request import Request, RequestOut
 from webspot.request.html_requester import HtmlRequester
 from webspot.web.app import app
 from webspot.web.logging import logger
+from webspot.web.models.payload.node import NodePayload
 from webspot.web.models.payload.request import RequestPayload
 
 
@@ -34,10 +40,55 @@ async def request(id: str) -> RequestOut:
 
 
 @app.get('/api/requests/{id}/html')
-async def request_html(id: str) -> HTMLResponse:
+async def request_html(id: str, mode: str = 'highlight') -> HTMLResponse:
     """Get a request."""
     d = Request.objects(pk=id).first()
-    return HTMLResponse(content=embed_highlight_css(d.html_highlighted))
+    if mode == 'annotate':
+        return HTMLResponse(content=embed_annotate(transform_html_links(d.html_highlighted, d.url)))
+    else:
+        return HTMLResponse(content=embed_highlight(d.html_highlighted))
+
+
+@app.get('/api/requests/{id}/nodes/{node_id}')
+async def request_node(id: str, node_id: int) -> dict:
+    """Get a request."""
+    d = Request.objects(pk=id).first()
+    json_data = convert(d.html)
+    graph_loader = GraphLoader(d.html, json_data)
+    graph_loader.run()
+    n = graph_loader.get_node_by_id(node_id)
+    return n
+
+
+@app.post('/api/requests/{id}/nodes')
+async def request_node(id: str, payload: NodePayload) -> NodeOut:
+    """Get a request."""
+    d = Request.objects(pk=id).first()
+    assert d is not None, f'Request not found for id: {id}'
+    soup = BeautifulSoup(d.html, 'html.parser')
+    node = soup.select_one(payload.css_selector)
+    assert node is not None, f'Node not found for selector: {payload.css_selector}'
+    n = Node(
+        request_id=id,
+        node_id=int(node.attrs['node-id']),
+        tag=payload.tag,
+    )
+    n.save()
+    return n.to_out()
+
+
+@app.post('/api/requests/{id}/nodes/{node_id}')
+async def request_node(id: str, node_id: int, payload: NodePayload) -> NodeOut:
+    """Get a request."""
+    d = Request.objects(pk=id).first()
+    assert d is not None, f'Request not found for id: {id}'
+    n = Node(
+        request_id=id,
+        node_id=node_id,
+        tag=payload.tag,
+    )
+    n.save()
+    return n.to_out()
 
 
 @app.put('/api/requests/{id}')
@@ -86,67 +137,24 @@ async def request(payload: RequestPayload = Body(
 
 
 def _run_request(d: Request):
-    execution_time = {
-        'html_requester': None,
-        'graph_loader': None,
-        'detectors': {},
-    }
     try:
-        # html requester
-        tic = datetime.now()
-        html_requester = HtmlRequester(
+        results, execution_time, html_requester, graph_loader, detectors = extract_rules(
             url=d.url,
+            method=d.method,
+            duration=d.duration,
             html=d.html,
-            request_method=d.method,
-            request_rod_duration=d.duration,
+            detectors=d.detectors,
         )
-        html_requester.run()
-        execution_time['html_requester'] = round((datetime.now() - tic).total_seconds() * 1000)
-
-        # graph loader
-        tic = datetime.now()
-        graph_loader = GraphLoader(
-            html=html_requester.html_,
-            json_data=html_requester.json_data,
-        )
-        graph_loader.run()
-        execution_time['graph_loader'] = round((datetime.now() - tic).total_seconds() * 1000)
-
-        # run detectors
-        html = html_requester.html
-        for detector_name in d.detectors:
-            # start time
-            tic = datetime.now()
-
-            # detector class
-            if detector_name == DETECTOR_PLAIN_LIST:
-                detector_cls = PlainListDetector
-            elif detector_name == DETECTOR_PAGINATION:
-                detector_cls = PaginationDetector
-            else:
-                raise Exception(f'Invalid detector: {detector_name}')
-
-            # run detector
-            detector = detector_cls(
-                graph_loader=graph_loader,
-                html_requester=html_requester,
-            )
-            detector.run()
-
-            # highlight html
-            html = detector.highlight_html(html)
-
-            # add to results
-            d.results[detector_name] = [r.dict() for r in detector.results]
-
-            # execution time
-            execution_time['detectors'][detector_name] = round((datetime.now() - tic).total_seconds() * 1000)
 
         # update request
         d.status = REQUEST_STATUS_SUCCESS
         d.html = html_requester.html_
+        html = html_requester.html
+        for detector in detectors:
+            html = detector.highlight_html(html)
         d.html_highlighted = html
         d.execution_time = execution_time
+        d.results = results
         d.save()
 
     except Exception as e:

@@ -1,6 +1,7 @@
 import base64
 import json
 import time
+from collections import defaultdict
 from typing import List, Set, Dict
 from urllib.parse import urljoin
 
@@ -37,13 +38,16 @@ class PlainListDetector(BaseDetector):
         dbscan_n_jobs: int = -1,
         entropy_threshold: float = 1e-3,
         score_threshold: float = 1.,
+        sample_item_nodes: int = 10,
         min_item_nodes: int = 5,
         node2vec_ratio: float = 1.,
         result_name_prefix: str = 'List',
         text_length_discount: float = 0.01,
         max_text_length: float = 1024,
         max_item_count: int = 10,
+        min_item_nodes_ratio: float = 0.5,
         max_feature_count: int = 10,
+        max_result_count: int = 10,
         *args,
         **kwargs,
     ):
@@ -52,13 +56,16 @@ class PlainListDetector(BaseDetector):
         # settings
         self.entropy_threshold = entropy_threshold
         self.score_threshold = score_threshold
+        self.sample_item_nodes = sample_item_nodes
         self.min_item_nodes = min_item_nodes
         self.node2vec_ratio = node2vec_ratio
         self.result_name_prefix = result_name_prefix
         self.text_length_discount = text_length_discount
         self.max_text_length = max_text_length
         self.max_item_count = max_item_count
+        self.min_item_nodes_ratio = min_item_nodes_ratio
         self.max_feature_count = max_feature_count
+        self.max_result_count = max_result_count
 
         # dbscan model
         self.dbscan = DBSCAN(
@@ -179,15 +186,15 @@ class PlainListDetector(BaseDetector):
         # fields
         fields: List[Selector] = []
 
-        # extract rules set (css selector path, type, attribute)
-        fields_extract_rules_set: Set[(str, str)] = set()
+        # extract rules dict (css selector path, type, attribute)
+        fields_extract_rules_dict: Dict[(str, str), int] = defaultdict(int)
 
         # list child nodes
         list_child_nodes = self.graph_loader.get_node_children_by_id(list_id)
 
         # iterate list child nodes
         i = 0
-        for c in list_child_nodes:
+        for c in np.random.choice(list_child_nodes, self.sample_item_nodes):
             if c.tag != item_nodes[0].tag:
                 continue
 
@@ -201,26 +208,28 @@ class PlainListDetector(BaseDetector):
             # iterate item child nodes
             for n in item_child_nodes:
                 # extract text
-                if n.text is not None and n.text.strip() != '':
+                if n.text is not None and len(n.text.strip()) > 0:
                     extract_rule_css = self.graph_loader.get_node_css_selector_path(node=n, root_id=list_id,
                                                                                     numbered=False, no_id=True)
-                    fields_extract_rules_set.add((extract_rule_css, FIELD_EXTRACT_RULE_TYPE_TEXT, ''))
+                    fields_extract_rules_dict[(extract_rule_css, FIELD_EXTRACT_RULE_TYPE_TEXT, '')] += 1
 
                 # extract link
-                if n.tag == 'a' and n.attrs.get('href') is not None:
+                if n.tag == 'a' and n.attrs.get('href') is not None and len(n.attrs.get('href').strip()) > 0:
                     extract_rule_css = self.graph_loader.get_node_css_selector_path(node=n, root_id=list_id,
                                                                                     numbered=False, no_id=True)
-                    fields_extract_rules_set.add((extract_rule_css, FIELD_EXTRACT_RULE_TYPE_LINK_URL, 'href'))
+                    fields_extract_rules_dict[(extract_rule_css, FIELD_EXTRACT_RULE_TYPE_LINK_URL, 'href')] += 1
 
                 # extract image url
-                if n.tag == 'img' and n.attrs.get('src') is not None:
+                if n.tag == 'img' and n.attrs.get('src') is not None and len(n.attrs.get('src').strip()) > 0:
                     extract_rule_css = self.graph_loader.get_node_css_selector_path(node=n, root_id=list_id,
                                                                                     numbered=False, no_id=True)
-                    fields_extract_rules_set.add((extract_rule_css, FIELD_EXTRACT_RULE_TYPE_IMAGE_URL, 'src'))
+                    fields_extract_rules_dict[(extract_rule_css, FIELD_EXTRACT_RULE_TYPE_IMAGE_URL, 'src')] += 1
 
             i += 1
 
-        for i, item in enumerate(fields_extract_rules_set):
+        for i, (item, count) in enumerate(fields_extract_rules_dict.items()):
+            if float(count) / self.min_item_nodes < self.min_item_nodes_ratio:
+                continue
             extract_rule_css, type_, attribute = item
             name = f'Field_{type_}_{i + 1}'
             fields.append(Selector(
@@ -388,6 +397,10 @@ class PlainListDetector(BaseDetector):
                                                            item_nodes_list,
                                                            score_list,
                                                            scores_list):
+            # break if max result count reached
+            if i == self.max_result_count:
+                break
+
             # list node
             list_node = list_node
 
@@ -439,6 +452,15 @@ class PlainListDetector(BaseDetector):
 
         return results
 
+    def _post_extract_filter(self, results: List[ListResult]) -> List[ListResult]:
+        for i, result in enumerate(results):
+            # prune if item nodes is fewer than threshold
+            if len(result.data) < self.min_item_nodes:
+                del results[i]
+                i -= 1
+
+        return results
+
     def _sort(self, results: List[ListResult]) -> List[ListResult]:
         results = sorted(results, key=lambda x: x.score, reverse=True)
 
@@ -462,6 +484,9 @@ class PlainListDetector(BaseDetector):
 
         # extract fields into results
         results = self._extract(*res)
+
+        # extract fields into results
+        results = self._post_extract_filter(results)
 
         # sort results
         self.results = self._sort(results)

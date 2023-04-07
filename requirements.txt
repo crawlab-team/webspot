@@ -1,5 +1,5 @@
 scrapy==2.7.1
-html-to-json-enhanced>=1.0.4
+html-to-json-enhanced>=1.0.5
 pandas==1.5.3
 scikit-learn==1.2.0
 fastapi==0.89.1

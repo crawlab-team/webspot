@@ -42,12 +42,21 @@ export default {
       });
     };
 
+    const mode = ref('highlight');
+    onBeforeMount(() => {
+      mode.value = store.getters.previewMode;
+    });
+    watch(() => mode.value, () => {
+      store.commit('setPreviewMode', mode.value);
+    });
+
     return {
       requestForm,
       updateRequestForm,
       onClickNewRequest,
       activeRequest,
       onClickRetry,
+      mode,
     };
   },
   template: `<div class="top-navbar">
@@ -73,5 +82,9 @@ export default {
   <el-button type="warning" style="margin-left: 12px" icon="refresh" @click="onClickRetry" :disabled="!activeRequest">
     Retry
   </el-button>
+  <el-radio-group v-model="mode" style="margin-left: 12px">
+    <el-radio-button label="highlight">Highlight</el-radio-button>
+    <el-radio-button label="annotate">Annotate</el-radio-button>
+  </el-radio-group>
 </div>`
 };

@@ -12,8 +12,6 @@ from webspot.detect.models.selector import Selector
 from webspot.detect.utils.highlight_html import add_class, add_label
 from webspot.detect.utils.transform_html_links import transform_url
 from webspot.detect.utils.url import get_url_domain
-from webspot.graph.graph_loader import GraphLoader
-from webspot.request.html_requester import HtmlRequester
 
 
 class PaginationDetector(BaseDetector):
@@ -110,32 +108,3 @@ class PaginationDetector(BaseDetector):
         self._extract()
 
         return self.results
-
-
-if __name__ == '__main__':
-    urls = [
-        # 'https://www.baidu.com/s?wd=crawlab',
-        # 'https://github.com/search?q=spider',
-        # 'https://www.bing.com/search?q=crawlab&form=QBLHCN&sp=-1&lq=0&pq=&sc=0-0&qs=n&sk=&cvid=BB20795C2CB64FCFBC5A0B69070A11AA&ghsh=0&ghacc=0&ghpl=',
-        # 'https://www.bing.com/search?q=crawlab&sp=-1&lq=0&pq=&sc=0-0&qs=n&sk=&cvid=BB20795C2CB64FCFBC5A0B69070A11AA&ghsh=0&ghacc=0&ghpl=&first=11&FORM=PORE',
-        # 'https://github.com/trending',
-        # 'https://github.com/crawlab-team/crawlab/actions',
-        'https://quotes.toscrape.com',
-        # 'https://quotes.toscrape.com/page/2/',
-        # 'https://books.toscrape.com',
-        # 'https://cuiqingcai.com/archives/',
-        # 'https://cuiqingcai.com/archives/page/2/',
-    ]
-
-    for url in urls:
-        html_requester = HtmlRequester(url=url, request_method='request')
-        html_requester.run()
-
-        graph_loader = GraphLoader(html=html_requester.html_, json_data=html_requester.json_data)
-        graph_loader.run()
-
-        pagination_detector = PaginationDetector(html_requester=html_requester, graph_loader=graph_loader)
-        pagination_detector.run()
-        print(url)
-        print(pagination_detector.results)
-        print('\n\n')

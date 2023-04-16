@@ -108,6 +108,10 @@ class GraphLoader(object):
         self._g_nx = DiGraph(self.g_dgl.to_networkx())
         return self._g_nx
 
+    @property
+    def soup(self):
+        return self._soup
+
     def get_nodes_json_data_by_filename(self, filename: str) -> (List[dict], dict):
         with open(filename) as f:
             json_data = json.loads(f.read())

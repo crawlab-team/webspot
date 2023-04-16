@@ -1,12 +1,7 @@
-import itertools
-import unittest
-
 import pytest
 
-from webspot.detect.detectors.plain_list import PlainListDetector, run_plain_list_detector
-from webspot.graph.graph_loader import GraphLoader
+from webspot.detect.detectors.plain_list import run_plain_list_detector
 from webspot.logging import get_logger
-from webspot.request.html_requester import HtmlRequester
 
 logger = get_logger('webspot.test.detect.test_plain_list')
 

@@ -68,21 +68,21 @@ export default {
       New Request
     </el-button>
   </div>
-  <div class="config-wrapper">
+  <div class="config-wrapper" style="display: none;">
     <el-tooltip content="Request Method" placement="bottom">
       <el-icon size="12px" style="margin-right: 12px">
         <i class="fa fa-paper-plane"></i>
       </el-icon>
     </el-tooltip>
-    <el-select v-model="requestForm.method" @change="updateRequestForm" style="width: 150px">
+    <el-select v-model="requestForm.method" @change="updateRequestForm" style="width: 150px;">
       <el-option label="Request" value="request"/>
       <el-option label="Rod (Browser)" value="rod"/>
     </el-select>
   </div>
-  <el-button type="warning" style="margin-left: 12px" icon="refresh" @click="onClickRetry" :disabled="!activeRequest">
+  <el-button type="warning" style="margin-left: 6px" icon="refresh" @click="onClickRetry" :disabled="!activeRequest">
     Retry
   </el-button>
-  <el-radio-group v-model="mode" style="margin-left: 12px">
+  <el-radio-group v-model="mode" style="margin-left: 12px; display: none">
     <el-radio-button label="highlight">Highlight</el-radio-button>
     <el-radio-button label="annotate">Annotate</el-radio-button>
   </el-radio-group>

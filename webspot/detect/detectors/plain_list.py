@@ -1,5 +1,6 @@
 import base64
 import json
+import math
 import time
 from collections import defaultdict
 from typing import List, Set, Dict
@@ -32,9 +33,9 @@ logger = get_logger('webspot.detect.detectors.plain_list')
 class PlainListDetector(BaseDetector):
     def __init__(
         self,
-        dbscan_eps: float = 0.5,
+        dbscan_eps: float = math.pi / 360 * 0.05,
         dbscan_min_samples: int = 3,
-        dbscan_metric: str = 'euclidean',
+        dbscan_metric: str = 'cosine',
         dbscan_n_jobs: int = -1,
         entropy_threshold: float = 1e-3,
         score_threshold: float = 1.,

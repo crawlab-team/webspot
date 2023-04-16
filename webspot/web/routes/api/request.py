@@ -7,10 +7,7 @@ from fastapi import Body
 from html_to_json_enhanced import convert
 from starlette.responses import HTMLResponse
 
-from webspot.constants.detector import DETECTOR_PLAIN_LIST, DETECTOR_PAGINATION
 from webspot.constants.request_status import REQUEST_STATUS_SUCCESS, REQUEST_STATUS_ERROR
-from webspot.detect.detectors.pagination import PaginationDetector
-from webspot.detect.detectors.plain_list import PlainListDetector
 from webspot.detect.utils.highlight_html import embed_highlight, embed_annotate
 from webspot.detect.utils.transform_html_links import transform_html_links
 from webspot.extract.extract_results import extract_rules
@@ -146,15 +143,14 @@ def _run_request(d: Request):
         )
 
         # update request
-        d.status = REQUEST_STATUS_SUCCESS
-        d.html = html_requester.html_
-        html = html_requester.html
-        for detector in detectors:
-            html = detector.highlight_html(html)
-        d.html_highlighted = html
-        d.execution_time = execution_time
-        d.results = results
-        d.save()
+        update_request(
+            d=d,
+            status=REQUEST_STATUS_SUCCESS,
+            html_requester=html_requester,
+            detectors=detectors,
+            execution_time=execution_time,
+            results=results,
+        )
 
     except Exception as e:
         err_lines = traceback.format_exception(type(e), e, e.__traceback__)
@@ -167,3 +163,20 @@ def _run_request(d: Request):
         d.save()
 
     return d
+
+
+def update_request(d: Request, status: str, **kwargs):
+    html_requester = kwargs.get('html_requester')
+    detectors = kwargs.get('detectors')
+    execution_time = kwargs.get('execution_time')
+    results = kwargs.get('results')
+
+    d.status = status
+    d.html = html_requester.html_
+    html = html_requester.html
+    for detector in detectors:
+        html = detector.highlight_html(html)
+    d.html_highlighted = html
+    d.execution_time = execution_time
+    d.results = results
+    d.save()

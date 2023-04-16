@@ -32,14 +32,14 @@ logger = get_logger('webspot.detect.detectors.plain_list')
 class PlainListDetector(BaseDetector):
     def __init__(
         self,
-        dbscan_eps: float = 0.7,
+        dbscan_eps: float = 0.5,
         dbscan_min_samples: int = 3,
         dbscan_metric: str = 'euclidean',
         dbscan_n_jobs: int = -1,
         entropy_threshold: float = 1e-3,
         score_threshold: float = 1.,
         sample_item_nodes: int = 10,
-        min_item_nodes: int = 5,
+        min_item_nodes: int = 3,
         node2vec_ratio: float = 1.,
         result_name_prefix: str = 'List',
         text_length_discount: float = 0.1,
@@ -296,8 +296,8 @@ class PlainListDetector(BaseDetector):
                     df_nodes_filtered.parent_id == parent_id]
 
                 # skip if item nodes count is less than required
-                if df_nodes_filtered_by_label_parent_id.shape[0] < self.min_item_nodes:
-                    continue
+                # if df_nodes_filtered_by_label_parent_id.shape[0] < self.min_item_nodes:
+                #     continue
 
                 # item node ids
                 item_nodes_ids = df_nodes_filtered_by_label_parent_id.id.values

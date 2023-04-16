@@ -32,7 +32,7 @@ logger = get_logger('webspot.detect.detectors.plain_list')
 class PlainListDetector(BaseDetector):
     def __init__(
         self,
-        dbscan_eps: float = 0.5,
+        dbscan_eps: float = 0.7,
         dbscan_min_samples: int = 3,
         dbscan_metric: str = 'euclidean',
         dbscan_n_jobs: int = -1,
@@ -42,8 +42,8 @@ class PlainListDetector(BaseDetector):
         min_item_nodes: int = 5,
         node2vec_ratio: float = 1.,
         result_name_prefix: str = 'List',
-        text_length_discount: float = 0.01,
-        max_text_length: float = 1024,
+        text_length_discount: float = 0.1,
+        max_text_length: float = 2048,
         max_item_count: int = 10,
         min_item_nodes_ratio: float = 0.5,
         max_feature_count: int = 10,

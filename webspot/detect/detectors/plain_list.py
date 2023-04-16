@@ -1,5 +1,6 @@
 import base64
 import json
+import math
 import time
 from collections import defaultdict
 from typing import List, Set, Dict
@@ -32,18 +33,18 @@ logger = get_logger('webspot.detect.detectors.plain_list')
 class PlainListDetector(BaseDetector):
     def __init__(
         self,
-        dbscan_eps: float = 0.5,
+        dbscan_eps: float = math.pi / 360 * 0.05,
         dbscan_min_samples: int = 3,
-        dbscan_metric: str = 'euclidean',
+        dbscan_metric: str = 'cosine',
         dbscan_n_jobs: int = -1,
         entropy_threshold: float = 1e-3,
         score_threshold: float = 1.,
         sample_item_nodes: int = 10,
-        min_item_nodes: int = 5,
+        min_item_nodes: int = 3,
         node2vec_ratio: float = 1.,
         result_name_prefix: str = 'List',
-        text_length_discount: float = 0.01,
-        max_text_length: float = 1024,
+        text_length_discount: float = 0.1,
+        max_text_length: float = 2048,
         max_item_count: int = 10,
         min_item_nodes_ratio: float = 0.5,
         max_feature_count: int = 10,
@@ -296,8 +297,8 @@ class PlainListDetector(BaseDetector):
                     df_nodes_filtered.parent_id == parent_id]
 
                 # skip if item nodes count is less than required
-                if df_nodes_filtered_by_label_parent_id.shape[0] < self.min_item_nodes:
-                    continue
+                # if df_nodes_filtered_by_label_parent_id.shape[0] < self.min_item_nodes:
+                #     continue
 
                 # item node ids
                 item_nodes_ids = df_nodes_filtered_by_label_parent_id.id.values

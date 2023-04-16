@@ -1,0 +1,15 @@
+version: '3.3'
+services:
+  webspot:
+    image: crawlabteam/webspot:develop
+    container_name: webspot
+    environment:
+      WEBSPOT_DATABASE_URL: mongodb://mongo:27017/webspot
+    volumes:
+      - ./webspot:/app/webspot
+    ports:
+      - '19999:80'
+
+  mongo:
+    image: mongo:4.2
+    container_name: webspot_mongo

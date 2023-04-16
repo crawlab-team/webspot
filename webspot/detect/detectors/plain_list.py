@@ -404,6 +404,8 @@ class PlainListDetector(BaseDetector):
 
             # list node
             list_node = list_node
+            if not list_node:
+                continue
 
             # item nodes
             item_nodes = item_nodes

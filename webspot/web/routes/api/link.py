@@ -78,8 +78,11 @@ async def requests(payload: RequestPayload = Body(
             link_list = []
             text_length = 0
 
+            # items elements
+            el_items = graph_loader.soup.select(list_items_selector)
+
             # iterate items
-            for el_item in graph_loader.soup.select(list_items_selector):
+            for el_item in el_items:
                 link_list_result_link = Link()
                 el_item_field = el_item.select_one(f['selector'])
                 if not el_item_field:
@@ -91,6 +94,9 @@ async def requests(payload: RequestPayload = Body(
                 link_list_result_link.text = el_item_field.get_text(strip=True)
                 link_list.append(link_list_result_link)
                 text_length += len(link_list_result_link.text)
+
+            # if text_length / len(el_items) > 80:
+            #     continue
 
             text_lengths.append(text_length)
             link_list_result_list.append(link_list)

@@ -41,7 +41,7 @@ class PlainListDetector(BaseDetector):
         score_threshold: float = 1.,
         sample_item_nodes: int = 10,
         min_item_nodes: int = 5,
-        node2vec_ratio: float = 1.,
+        node2vec_ratio: float = 10.,
         result_name_prefix: str = 'List',
         text_length_discount: float = 0.1,
         max_text_length: float = 2048,
@@ -129,14 +129,21 @@ class PlainListDetector(BaseDetector):
     def results_base64(self):
         return base64.b64encode(json.dumps(self.results).encode('utf-8')).decode('utf-8')
 
+    @property
+    def pruned_nodes_features(self):
+        features = self.graph_loader.nodes_features_tensor.detach().numpy()
+        features_count = features.sum(axis=0)
+        features_idx = np.argwhere(features_count > 1).T[0]
+        return features[:, features_idx]
+
     def _get_nodes_features_tags_attrs(self, nodes_idx: np.ndarray = None):
         """
         nodes features (tags + attributes)
         """
         if nodes_idx is None:
-            features = self.graph_loader.nodes_features_tensor.detach().numpy()
+            features = self.pruned_nodes_features
         else:
-            features = self.graph_loader.nodes_features_tensor.detach().numpy()[nodes_idx].sum(axis=1)
+            features = self.pruned_nodes_features[nodes_idx].sum(axis=1)
 
         return normalize(
             features,
@@ -153,8 +160,7 @@ class PlainListDetector(BaseDetector):
         else:
             embedded_tensor = self.graph_loader.nodes_embedded_tensor[nodes_idx.T[0]]
 
-        embedded_features_tensor = self.graph_loader.nodes_features_tensor[embedded_tensor].sum(dim=1)
-        embedded_features = embedded_features_tensor.detach().numpy()
+        embedded_features = self.pruned_nodes_features[embedded_tensor].sum(axis=1)
 
         return normalize(
             embedded_features,

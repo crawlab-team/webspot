@@ -55,14 +55,14 @@ test_cases = [
             }
         }
     },
-    # {
-    #     'url': 'https://github.com/crawlab-team/crawlab/actions',
-    #     'result': {
-    #         'selectors': {
-    #             'list': '#partial-actions-workflow-runs'
-    #         }
-    #     }
-    # },
+    {
+        'url': 'https://github.com/crawlab-team/crawlab/actions',
+        'result': {
+            'selectors': {
+                'list': '#partial-actions-workflow-runs'
+            }
+        }
+    },
     # {
     #     'url': 'https://cuiqingcai.com',
     #     'result': {

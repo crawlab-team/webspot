@@ -12,6 +12,8 @@ from bs4 import BeautifulSoup
 from scipy.sparse import csr_matrix
 from scipy.stats import entropy
 from sklearn.cluster import DBSCAN
+from sklearn.decomposition import PCA
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.preprocessing import normalize
 
 from webspot.constants.detector import DETECTOR_PLAIN_LIST
@@ -33,10 +35,11 @@ logger = get_logger('webspot.detect.detectors.plain_list')
 class PlainListDetector(BaseDetector):
     def __init__(
         self,
-        dbscan_eps: float = math.pi / 360 * 0.05,
-        dbscan_min_samples: int = 3,
-        dbscan_metric: str = 'cosine',
+        dbscan_eps: float = 0.01,
+        dbscan_min_samples: int = 5,
+        dbscan_metric: str = 'euclidean',
         dbscan_n_jobs: int = -1,
+        pca_n_components: int = 50,
         entropy_threshold: float = 1e-3,
         score_threshold: float = 1.,
         sample_item_nodes: int = 10,
@@ -55,6 +58,7 @@ class PlainListDetector(BaseDetector):
         super().__init__(*args, **kwargs)
 
         # settings
+        self.pca_n_components = pca_n_components
         self.entropy_threshold = entropy_threshold
         self.score_threshold = score_threshold
         self.sample_item_nodes = sample_item_nodes
@@ -183,6 +187,12 @@ class PlainListDetector(BaseDetector):
             axis=1,
         )
         logger.debug(f'nodes features size: {x.shape}')
+
+        if x.shape[1] > self.pca_n_components:
+            x = PCA(
+                n_components=self.pca_n_components,
+                svd_solver='randomized',
+            ).fit_transform(x)
 
         if to_sparse:
             return csr_matrix(x)
@@ -440,9 +450,13 @@ class PlainListDetector(BaseDetector):
 
             # fields node extract rule
             fields_selectors = self._extract_fields_by_id(list_id=list_node.id, item_nodes=item_nodes)
+            if len(fields_selectors) == 0:
+                continue
 
             # data
             data = self._extract_data(soup, full_items_selector.selector, fields_selectors)
+            if len(data) == 0:
+                continue
 
             # result
             result = ListResult(

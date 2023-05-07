@@ -31,7 +31,7 @@ test_cases = [
         },
     },
     {
-        'url': 'https://github.com/search?q=spider',
+        'url': 'https://github.com/search?q=spider&type=repositories',
         'result': {
             'selectors': {
                 'list': 'div.px-2 > ul.repo-list'
@@ -60,6 +60,22 @@ test_cases = [
         'result': {
             'selectors': {
                 'list': '#partial-actions-workflow-runs'
+            }
+        }
+    },
+    {
+        'url': 'https://huggingface.co/datasets',
+        'result': {
+            'selectors': {
+                'list': 'div.grid.grid-cols-1.gap-5'
+            }
+        }
+    },
+    {
+        'url': 'https://www.36kr.com/information/web_news/latest/',
+        'result': {
+            'selectors': {
+                'list': 'div.kr-loading-more > div.information-flow-list'
             }
         }
     },

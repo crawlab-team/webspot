@@ -23,18 +23,18 @@ def cmd_crawl(args):
     # items
     full_items = result_plain_list[0].get('selectors').get('full_items')
     items_selector = full_items.get('selector')
-    print(items_selector)
+    # print(items_selector)
 
     # fields
     fields = result_plain_list[0].get('fields')
-    print(fields)
+    # print(fields)
 
     # pagination
     result_pagination = results.get(DETECTOR_PAGINATION)
     pagination_selector = None
     if result_pagination is not None and len(result_pagination) > 0:
         pagination_selector = result_pagination[0].get('selectors').get('next').get('selector')
-    print(pagination_selector)
+    # print(pagination_selector)
 
     res = crawl_page(url, items_selector, fields, pagination_selector)
     print(DataFrame(list(res)))
@@ -43,7 +43,7 @@ def cmd_crawl(args):
 def crawl_page(url, items_selector, fields, pagination_selector):
     print(f'requesting {url}')
     res = requests.get(url)
-    soup = BeautifulSoup(res.content)
+    soup = BeautifulSoup(res.content, features='lxml')
 
     for el_item in soup.select(items_selector):
         row = {}

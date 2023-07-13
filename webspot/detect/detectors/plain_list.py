@@ -362,7 +362,8 @@ class PlainListDetector(BaseDetector):
                 logger.debug(f'score_item_count: {score_item_count}')
 
                 # score
-                score = score_text_richness + score_complexity + score_item_count
+                # score = score_text_richness + score_complexity + score_item_count
+                score = score_text_richness + score_item_count
                 logger.debug(f'score: {score}')
 
                 # skip score less than threshold
